@@ -1,6 +1,5 @@
 package com.server.ShareDoo.config;
 
-
 import com.server.ShareDoo.entity.User;
 import com.server.ShareDoo.enums.Role;
 import com.server.ShareDoo.repository.UserRepository;
@@ -8,8 +7,6 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Set;
 
 @Configuration
 public class ApplicationInitConfig {
@@ -20,21 +17,22 @@ public class ApplicationInitConfig {
     }
 
     @Bean
-    ApplicationRunner applicationRunner(UserRepository userRepository){
+    ApplicationRunner applicationRunner(UserRepository userRepository) {
         return args -> {
-
             if (!userRepository.existsByUsername("admin")) {
-                User admin = new User();
-                admin.setUsername("admin");
-                admin.setPassword(passwordEncoder.encode("admin"));
-                admin.setRole(Role.ADMIN);
+                User admin = User.builder()
+                        .username("admin")
+                        .password(passwordEncoder.encode("admin"))
+                        .role(Role.ADMIN)
+                        .fullName("Administrator")
+                        .email("admin@sharedoo.com")
+                        .phone("0123456789")
+                        .isVerified(true)
+                        .isActive(true)
+                        .isDeleted(false)
+                        .build();
                 userRepository.save(admin);
             }
-
-
-
         };
     }
-
-
 }

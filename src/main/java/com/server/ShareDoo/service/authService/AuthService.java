@@ -1,6 +1,5 @@
 package com.server.ShareDoo.service.authService;
 
-
 import com.server.ShareDoo.dto.request.LoginDTO;
 import com.server.ShareDoo.dto.request.UserDTO;
 import com.server.ShareDoo.dto.response.ResLoginDTO;
@@ -10,12 +9,13 @@ import com.server.ShareDoo.repository.UserRepository;
 import com.server.ShareDoo.service.userService.UserService;
 import com.server.ShareDoo.util.SecurityUtil;
 import com.server.ShareDoo.util.error.IdInvalidException;
-import com.server.ShareDoo.util.error.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import jakarta.persistence.EntityNotFoundException;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -29,31 +29,49 @@ public class AuthService {
     SecurityUtil securityUtil;
     @Autowired
     UserService userService;
+
     public ResLoginDTO login(LoginDTO loginDTO) {
-        var user = userRepository.findByUsername(loginDTO.getUsername()).orElseThrow(() -> new NotFoundException("User not found"));
-        if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) throw new NotFoundException("Wrong password");
+        var user = userRepository.findByUsername(loginDTO.getUsername())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
+            throw new EntityNotFoundException("Wrong password");
+        }
+        
+        // Update last login time
+        user.setLastLoginAt(LocalDateTime.now());
+        userRepository.save(user);
+        
         String token = securityUtil.createToken(user);
         ResLoginDTO resLoginDTO = new ResLoginDTO();
         resLoginDTO.setToken(token);
-        resLoginDTO.setUsername(user.getUsername());
         resLoginDTO.setRole(user.getRole());
+        resLoginDTO.setUsername(user.getUsername());
         resLoginDTO.setEmail(user.getEmail());
-        resLoginDTO.setName(user.getName());
-        resLoginDTO.setRestaurant_name(user.getRestaurant_name());
-
-        resLoginDTO.setUser_id(user.getUser_id());
+        resLoginDTO.setAddress(user.getAddress());
+        resLoginDTO.setPhone(user.getPhone());
+        resLoginDTO.setFullName(user.getFullName());
+        resLoginDTO.setUserId(user.getUserId());
+        resLoginDTO.setVerified(user.isVerified());
+        resLoginDTO.setAvatarUrl(user.getAvatarUrl());
+        resLoginDTO.setActive(user.isActive());
         return resLoginDTO;
     }
 
     public User register(UserDTO userDTO) throws IdInvalidException {
-        User user = new User();
-        user.setRole(Role.ADMIN);
-        user.setEmail(userDTO.getEmail());
-        user.setUsername(userDTO.getUsername());
-        user.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-        user.setName(userDTO.getName());
-//        user.setIs_deleted(userDTO.getDelete());
-        user.setUser_id(userDTO.getUser_id());
+        User user = User.builder()
+                .role(Role.ADMIN)
+                .email(userDTO.getEmail())
+                .username(userDTO.getUsername())
+                .password(passwordEncoder.encode(userDTO.getPassword()))
+                .fullName(userDTO.getFullName())
+                .userId(userDTO.getUserId())
+                .phone(userDTO.getPhone())
+                .address(userDTO.getAddress())
+                .isVerified(false)
+                .isActive(true)
+                .isDeleted(false)
+                .build();
+
         boolean isUsernameExist = this.userService.isUsernameExist(userDTO.getUsername());
         if (isUsernameExist) {
             throw new IdInvalidException(
@@ -62,31 +80,68 @@ public class AuthService {
 
         try {
             return userRepository.save(user);
-        }catch (DataIntegrityViolationException e){
-            if(e.getMessage().contains("user.UK_sb8bbouer5wak8vyiiy4pf2bx")) throw new DataIntegrityViolationException("Duplicate UserName");
-            else if(e.getMessage().contains("user.UK_ob8kqyqqgmefl0aco34akdtpe"))throw new DataIntegrityViolationException("Duplicate Email");
-            else throw new DataIntegrityViolationException("Duplicate Phone");
+        } catch (DataIntegrityViolationException e) {
+            if (e.getMessage().contains("user.UK_sb8bbouer5wak8vyiiy4pf2bx")) 
+                throw new DataIntegrityViolationException("Duplicate UserName");
+            else if (e.getMessage().contains("user.UK_ob8kqyqqgmefl0aco34akdtpe"))
+                throw new DataIntegrityViolationException("Duplicate Email");
+            else 
+                throw new DataIntegrityViolationException("Duplicate Phone");
+        }
+    }
+
+    public ResLoginDTO createUser(UserDTO userDTO) {
+        User user = User.builder()
+                .username(userDTO.getUsername())
+                .email(userDTO.getEmail())
+                .password(passwordEncoder.encode(userDTO.getPassword()))
+                .fullName(userDTO.getFullName())
+                .userId(userDTO.getUserId())
+                .role(userDTO.getRole())
+                .phone(userDTO.getPhone())
+                .address(userDTO.getAddress())
+                .isVerified(false)
+                .isActive(true)
+                .isDeleted(false)
+                .build();
+
+        boolean isUsernameExist = this.userService.isUsernameExist(userDTO.getUsername());
+        if (isUsernameExist) {
+            throw new DataIntegrityViolationException("Duplicate Username");
+        } else {
+            boolean isEmailExist = this.userService.isEmailExist(userDTO.getEmail());
+            if (isEmailExist) {
+                throw new DataIntegrityViolationException("Duplicate Email");
+            } else {
+                boolean isPhoneExist = this.userService.isPhoneExist(userDTO.getPhone());
+                if (isPhoneExist) {
+                    throw new DataIntegrityViolationException("Duplicate Phone");
+                }
+            }
         }
 
-
+        user = userRepository.save(user);
+        return login(new LoginDTO(user.getUsername(), userDTO.getPassword()));
     }
-//    public ResLoginDTO loginStudent(LoginDTO loginDTO) {
-//        var student = studentRepository.findByUsername(loginDTO.getUsername()).orElseThrow(() -> new NotFoundException("User not found"));
-//        if (!passwordEncoder.matches(loginDTO.getPassword(), student.getPassword())) throw new NotFoundException("Wrong password");
-//        String token = securityUtil.createTokenStudent(student);
-//        ResLoginDTO resLoginDTO = new ResLoginDTO();
-//        resLoginDTO.setToken(token);
-//        resLoginDTO.setRole(Role.STUDENT);
-//        resLoginDTO.setUsername(student.getUsername());
-//        resLoginDTO.setEmail(student.getEmail());
-//        resLoginDTO.setAddress(student.getAddress());
-//        resLoginDTO.setPhone(student.getPhone());
-//        resLoginDTO.setFirst_name(student.getFirst_name());
-//        resLoginDTO.setLast_name(student.getLast_name());
-//        resLoginDTO.setImage(student.getImage());
-//        resLoginDTO.setIs_deleted(student.getIs_deleted());
-//        resLoginDTO.setUser_id(student.getStudent_id());
-//        return resLoginDTO;
-//    }
+
+    public boolean verifyUser(String token) {
+        // Implementation of verifyUser method
+        return false; // Placeholder return, actual implementation needed
+    }
+
+    public boolean resendVerificationEmail(String email) {
+        // Implementation of resendVerificationEmail method
+        return false; // Placeholder return, actual implementation needed
+    }
+
+    public boolean forgotPassword(String email) {
+        // Implementation of forgotPassword method
+        return false; // Placeholder return, actual implementation needed
+    }
+
+    public boolean resetPassword(String token, String newPassword) {
+        // Implementation of resetPassword method
+        return false; // Placeholder return, actual implementation needed
+    }
 }
 

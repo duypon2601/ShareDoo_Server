@@ -1,6 +1,5 @@
 package com.server.ShareDoo.service.userService;
 
-
 import com.server.ShareDoo.dto.request.UserDTO;
 import com.server.ShareDoo.entity.User;
 import com.server.ShareDoo.mapper.UserMapper;
@@ -28,18 +27,17 @@ public class UserServiceImpl implements UserService {
         }
         userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
         User user = UserMapper.mapToUser(userDTO);
-        user.setRole(userDTO.getRole());
-        User savedUser= userRepository.save(user);
+        User savedUser = userRepository.save(user);
         return UserMapper.mapToUserDTO(savedUser);
     }
 
     @Override
-    public UserDTO getUserById(Integer user_id) throws IdInvalidException {
-        Optional<User> user = userRepository.findById(user_id);
+    public UserDTO getUserById(Integer userId) throws IdInvalidException {
+        Optional<User> user = userRepository.findById(userId);
         if (user.isPresent()) {
             return UserMapper.mapToUserDTO(user.get());
-        }else{
-            throw new IdInvalidException("User với id = " + user_id + " không tồn tại");
+        } else {
+            throw new IdInvalidException("User với id = " + userId + " không tồn tại");
         }
     }
 
@@ -48,81 +46,65 @@ public class UserServiceImpl implements UserService {
         List<User> users = userRepository.findAll();
         return users.stream()
                 .map(UserMapper::mapToUserDTO)
-//                .map(this::convertToResUserDTO)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public UserDTO updateUser(UserDTO updateUser, Integer user_id) {
-        User user = userRepository.findById(user_id)
-                .orElseThrow(()-> new RuntimeException("Topic "+user_id+" not found"));
-        user.setName(updateUser.getName());
-        user.setRestaurant_name(updateUser.getRestaurant_name());
+    public UserDTO updateUser(UserDTO updateUser, Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User " + userId + " not found"));
+        
+        user.setFullName(updateUser.getFullName());
         user.setEmail(updateUser.getEmail());
         user.setUsername(updateUser.getUsername());
         user.setRole(updateUser.getRole());
-        User updateUserObj = userRepository.save(user);
-        return UserMapper.mapToUserDTO(updateUserObj);
+        user.setPhone(updateUser.getPhone());
+        user.setAddress(updateUser.getAddress());
+        user.setAvatarUrl(updateUser.getAvatarUrl());
+        
+        User updatedUser = userRepository.save(user);
+        return UserMapper.mapToUserDTO(updatedUser);
     }
 
     @Override
-    public void deleteUser(Integer user_id) throws IdInvalidException {
-        User user = userRepository.findById(user_id)
-                .orElseThrow(() -> new IdInvalidException("User với id = " + user_id + " không tồn tại"));
-        userRepository.deleteById(user_id);
+    public void deleteUser(Integer userId) throws IdInvalidException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IdInvalidException("User với id = " + userId + " không tồn tại"));
+        user.setDeleted(true);
+        userRepository.save(user);
     }
 
     @Override
     public UserDTO handleGetUserByUsername(String username) {
-        User user = userRepository.findByUsername(username).orElseThrow(()->new RuntimeException("Not exits"+username));
-
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
         return UserMapper.mapToUserDTO(user);
     }
 
+    @Override
     public boolean isUsernameExist(String username) {
         return this.userRepository.existsByUsername(username);
     }
-//    @Override
-//    public ResCreateUserDTO convertToResCreateUserDTO(UserDTO user) {
-//        ResCreateUserDTO res = new ResCreateUserDTO();
-//        res.setUser_id(user.getUser_id());
-//        res.setFirst_name(user.getFirst_name());
-//        res.setLast_name(user.getLast_name());
-//        res.setPhone(user.getPhone());
-//        res.setEmail(user.getEmail());
-//        res.setAddress(user.getAddress());
-//        res.setImage(user.getImage());
-//        res.setUsername(user.getUsername());
-//        res.setRole(user.getRole());
-//        return res;
-//    }
-//    @Override
-//    public ResUpdateUserDTO convertToResUpdateUserDTO(UserDTO user) {
-//        ResUpdateUserDTO res = new ResUpdateUserDTO();
-//        res.setUser_id(user.getUser_id());
-//        res.setFirst_name(user.getFirst_name());
-//        res.setLast_name(user.getLast_name());
-//        res.setPhone(user.getPhone());
-//        res.setEmail(user.getEmail());
-//        res.setAddress(user.getAddress());
-//        res.setImage(user.getImage());
-//        res.setUsername(user.getUsername());
-//        res.setRole(user.getRole());
-//        return res;
-//    }
-//    @Override
-//    public ResUserDTO convertToResUserDTO(UserDTO user) {
-//        ResUserDTO res = new ResUserDTO();
-//        res.setUser_id(user.getUser_id());
-//        res.setFirst_name(user.getFirst_name());
-//        res.setLast_name(user.getLast_name());
-//        res.setPhone(user.getPhone());
-//        res.setEmail(user.getEmail());
-//        res.setAddress(user.getAddress());
-//        res.setImage(user.getImage());
-//        res.setUsername(user.getUsername());
-//        res.setRole(user.getRole());
-//        res.setDelete(user.getDelete() != null ? user.getDelete() : false);
-//        return res;
-//    }
+
+    @Override
+    public boolean isEmailExist(String email) {
+        return this.userRepository.existsByEmail(email);
+    }
+
+    @Override
+    public boolean isPhoneExist(String phone) {
+        return this.userRepository.existsByPhone(phone);
+    }
+
+    @Override
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with email: " + email));
+    }
+
+    @Override
+    public User getUserByPhone(String phone) {
+        return userRepository.findByPhone(phone)
+                .orElseThrow(() -> new RuntimeException("User not found with phone: " + phone));
+    }
 }
