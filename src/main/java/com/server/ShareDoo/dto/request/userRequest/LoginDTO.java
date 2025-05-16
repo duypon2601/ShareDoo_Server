@@ -1,4 +1,4 @@
-package com.server.ShareDoo.dto.request;
+package com.server.ShareDoo.dto.request.userRequest;
 
 import jakarta.validation.constraints.NotBlank;
 
