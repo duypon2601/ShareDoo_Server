@@ -1,5 +1,4 @@
-package com.server.ShareDoo.dto.request;
-
+package com.server.ShareDoo.dto.request.userRequest;
 
 import com.server.ShareDoo.enums.Role;
 import lombok.AllArgsConstructor;
@@ -7,30 +6,24 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserDTO {
-    private int user_id;
-
+    private int userId;
     private String name;
-
-    private String restaurant_name;
-
     private String email;
-
-//    private String address;
-//
-//    private String image;
-
+    private String address;
     private String username;
-
     private String password;
-
-//    private Boolean delete;
-
     private Role role;
-
-
+    private boolean isActive;
+    private boolean isVerified;
+    private boolean isDeleted;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime lastLoginAt;
 }

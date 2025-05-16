@@ -1,9 +1,8 @@
 package com.server.ShareDoo.controller;
 
-import com.server.ShareDoo.dto.request.LoginDTO;
-import com.server.ShareDoo.dto.request.UserDTO;
+import com.server.ShareDoo.dto.request.userRequest.LoginDTO;
+import com.server.ShareDoo.dto.request.userRequest.UserDTO;
 import com.server.ShareDoo.dto.response.ResLoginDTO;
-import com.server.ShareDoo.entity.User;
 import com.server.ShareDoo.service.authService.AuthService;
 import com.server.ShareDoo.service.userService.UserService;
 import com.server.ShareDoo.util.error.IdInvalidException;
@@ -21,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @CrossOrigin("*")
@@ -74,7 +72,7 @@ public class AuthController {
         @ApiResponse(
             responseCode = "201",
             description = "User registered successfully",
-            content = @Content(schema = @Schema(implementation = User.class))
+            content = @Content(schema = @Schema(implementation = UserDTO.class))
         ),
         @ApiResponse(
             responseCode = "400",
@@ -82,17 +80,12 @@ public class AuthController {
         )
     })
     @PostMapping("/register")
-    public ResponseEntity<User> createUser(
+    public ResponseEntity<UserDTO> createUser(
         @Parameter(description = "User registration data", required = true)
         @Valid @RequestBody UserDTO userDTO
     ) throws IdInvalidException {
-//        boolean isOtpValid = otpService.validateOtp(userDTO.getPhone(), otp);
-//        if (!isOtpValid) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-//        }
-        User user = authService.register(userDTO);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        UserDTO createdUser = authService.register(userDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 
 
