@@ -3,18 +3,26 @@ package com.server.ShareDoo.controller;
 import com.server.ShareDoo.dto.request.userRequest.CreateUserDTO;
 import com.server.ShareDoo.dto.request.userRequest.UserDTO;
 import com.server.ShareDoo.dto.response.ResCreateUserDTO;
+import com.server.ShareDoo.dto.response.ResUserDTO;
 import com.server.ShareDoo.dto.response.RestResponse;
 import com.server.ShareDoo.service.userService.UserService;
 import com.server.ShareDoo.util.error.IdInvalidException;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+@Slf4j
 @CrossOrigin("*")
 @RestController
 @AllArgsConstructor
@@ -26,9 +34,13 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<ResCreateUserDTO> createUser(@RequestBody CreateUserDTO createUserDTO) throws IdInvalidException {
+    public ResponseEntity<RestResponse<ResCreateUserDTO>> createUser(@RequestBody CreateUserDTO createUserDTO) throws IdInvalidException {
         ResCreateUserDTO createdUser = userService.createUser(createUserDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        RestResponse<ResCreateUserDTO> response = new RestResponse<>();
+        response.setStatusCode(HttpStatus.CREATED.value());
+        response.setMessage("User created successfully");
+        response.setData(createdUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/{id}")
@@ -41,18 +53,23 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping
-    public ResponseEntity<RestResponse<Page<UserDTO>>> getAllUsers(Pageable pageable) {
-        Page<UserDTO> users = userService.getAllUsers(pageable);
-        RestResponse<Page<UserDTO>> response = new RestResponse<>();
-        response.setStatusCode(HttpStatus.OK.value());
-        response.setMessage("Users retrieved successfully");
-        response.setData(users);
-        return ResponseEntity.ok(response);
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER') ")
+    @GetMapping("/get/all")
+    public ResponseEntity<List<ResUserDTO>> getUserAll(){
+        List<ResUserDTO> user = userService.getUserAll();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        log.info("Username : {}", authentication.getName());
+        authentication.getAuthorities().forEach(grantedAuthority -> log.info(grantedAuthority.getAuthority()));
+        return ResponseEntity.ok(user);
     }
 
     @GetMapping("/deleted")
-    public ResponseEntity<RestResponse<Page<UserDTO>>> getDeletedUsers(Pageable pageable) {
+    public ResponseEntity<RestResponse<Page<UserDTO>>> getDeletedUsers(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "userId,asc") String[] sort
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
         Page<UserDTO> deletedUsers = userService.getDeletedUsers(pageable);
         RestResponse<Page<UserDTO>> response = new RestResponse<>();
         response.setStatusCode(HttpStatus.OK.value());
