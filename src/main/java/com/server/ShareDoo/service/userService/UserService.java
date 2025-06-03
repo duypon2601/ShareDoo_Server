@@ -21,7 +21,7 @@ public interface UserService {
 
     ResUserDTO convertToResUserDTO(UserDTO user);
 
-    Page<UserDTO> searchUsers(String username, String email, Pageable pageable);
+    Page<ResUserDTO> searchUsers(String username, String email, Pageable pageable);
     Page<UserDTO> getDeletedUsers(Pageable pageable);
 
     // Update
