@@ -11,6 +11,7 @@ import com.server.ShareDoo.util.error.IdInvalidException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,6 +70,7 @@ public class UserServiceImpl implements UserService {
         return UserMapper.mapToUserDTO(user);
     }
 
+
     @Override
     public List<ResUserDTO> getUserAll() {
         List<User> users = userRepository.findAll();
@@ -98,18 +100,29 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public Page<UserDTO> searchUsers(String username, String email, Pageable pageable) {
-        if (username != null && email != null) {
-            return userRepository.findByUsernameContainingAndEmailContaining(username, email, pageable)
-                    .map(UserMapper::mapToUserDTO);
-        } else if (username != null) {
-            return userRepository.findByUsernameContaining(username, pageable)
-                    .map(UserMapper::mapToUserDTO);
-        } else if (email != null) {
-            return userRepository.findByEmailContaining(email, pageable)
-                    .map(UserMapper::mapToUserDTO);
-        }
-        return getAllUsers(pageable);
+    public Page<ResUserDTO> searchUsers(String username, String email, Pageable pageable) {
+        List<ResUserDTO> allUsers = getUserAll();
+        
+        // Filter users based on search criteria
+        List<ResUserDTO> filteredUsers = allUsers.stream()
+            .filter(user -> {
+                boolean matchesUsername = username == null || 
+                    user.getUsername().toLowerCase().contains(username.toLowerCase());
+                boolean matchesEmail = email == null || 
+                    user.getEmail().toLowerCase().contains(email.toLowerCase());
+                return matchesUsername && matchesEmail;
+            })
+            .collect(Collectors.toList());
+
+        // Convert to Page
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), filteredUsers.size());
+        
+        return new PageImpl<>(
+            filteredUsers.subList(start, end),
+            pageable,
+            filteredUsers.size()
+        );
     }
 
     @Override
