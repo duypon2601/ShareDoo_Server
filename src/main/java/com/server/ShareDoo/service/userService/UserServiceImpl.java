@@ -8,26 +8,75 @@ import com.server.ShareDoo.entity.User;
 import com.server.ShareDoo.mapper.UserMapper;
 import com.server.ShareDoo.repository.UserRepository;
 import com.server.ShareDoo.util.error.IdInvalidException;
+import com.server.ShareDoo.util.error.NotFoundException;
+import com.server.ShareDoo.util.error.AuthHandlerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
 
+    private static final String EMAIL_PATTERN = "^[A-Za-z0-9+_.-]+@(.+)$";
+    private static final Pattern emailPattern = Pattern.compile(EMAIL_PATTERN);
+
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public ResCreateUserDTO createUser(CreateUserDTO createUserDTO) throws IdInvalidException {
+        // Validate input
+        if (!StringUtils.hasText(createUserDTO.getUsername())) {
+            throw new IdInvalidException("Username is required");
+        }
+        if (!StringUtils.hasText(createUserDTO.getPassword())) {
+            throw new IdInvalidException("Password is required");
+        }
+        if (!StringUtils.hasText(createUserDTO.getEmail())) {
+            throw new IdInvalidException("Email is required");
+        }
+        if (!StringUtils.hasText(createUserDTO.getName())) {
+            throw new IdInvalidException("Name is required");
+        }
+        if (!StringUtils.hasText(createUserDTO.getAddress())) {
+            throw new IdInvalidException("Address is required");
+        }
+
+        // Validate password length
+        if (createUserDTO.getPassword().length() < 6) {
+            throw new IdInvalidException("Password must be at least 6 characters long");
+        }
+
+        // Validate email format
+        if (!emailPattern.matcher(createUserDTO.getEmail()).matches()) {
+            throw new IdInvalidException("Invalid email format");
+        }
+
+        // Validate name length
+        if (createUserDTO.getName().length() < 2) {
+            throw new IdInvalidException("Name must be at least 2 characters long");
+        }
+
+        // Validate address length
+        if (createUserDTO.getAddress().length() < 5) {
+            throw new IdInvalidException("Address must be at least 5 characters long");
+        }
+
+        // Check for existing username and email
         if (userRepository.findByUsername(createUserDTO.getUsername()).isPresent()) {
             throw new IdInvalidException("Username already exists");
         }
@@ -40,7 +89,8 @@ public class UserServiceImpl implements UserService {
         user.setEmail(createUserDTO.getEmail());
         user.setAddress(createUserDTO.getAddress());
         user.setUsername(createUserDTO.getUsername());
-        user.setPassword(createUserDTO.getPassword());
+        // Encode password before saving
+        user.setPassword(passwordEncoder.encode(createUserDTO.getPassword()));
         user.setRole(createUserDTO.getRole());
         
         // Set default values
@@ -58,7 +108,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDTO getUserById(Integer userId) throws IdInvalidException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IdInvalidException("User not found with id: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
         return UserMapper.mapToUserDTO(user);
     }
 
@@ -66,7 +116,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDTO getUserByUsername(String username) throws IdInvalidException {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new IdInvalidException("User not found with username: " + username));
+                .orElseThrow(() -> new NotFoundException("User not found with username: " + username));
         return UserMapper.mapToUserDTO(user);
     }
 
@@ -136,12 +186,26 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDTO updateUser(Integer userId, UserDTO userDTO) throws IdInvalidException {
         User existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new IdInvalidException("User not found with id: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
 
-        // Validate email uniqueness if email is being changed
-        if (!existingUser.getEmail().equals(userDTO.getEmail()) && 
-            userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
-            throw new IdInvalidException("Email already exists");
+        // Validate email format if email is being changed
+        if (!existingUser.getEmail().equals(userDTO.getEmail())) {
+            if (!emailPattern.matcher(userDTO.getEmail()).matches()) {
+                throw new IdInvalidException("Invalid email format");
+            }
+            if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
+                throw new IdInvalidException("Email already exists");
+            }
+        }
+
+        // Validate name
+        if (!StringUtils.hasText(userDTO.getName()) || userDTO.getName().length() < 2) {
+            throw new IdInvalidException("Name must be at least 2 characters long");
+        }
+
+        // Validate address
+        if (!StringUtils.hasText(userDTO.getAddress()) || userDTO.getAddress().length() < 5) {
+            throw new IdInvalidException("Address must be at least 5 characters long");
         }
 
         existingUser.setName(userDTO.getName());
@@ -157,7 +221,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void deleteUser(Integer userId) throws IdInvalidException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IdInvalidException("User not found with id: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
         
         if (user.getIsDeleted()) {
             throw new IdInvalidException("User is already deleted");
@@ -172,7 +236,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDTO restoreUser(Integer userId) throws IdInvalidException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IdInvalidException("User not found with id: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
         
         if (!user.getIsDeleted()) {
             throw new IdInvalidException("User is not deleted");
@@ -188,7 +252,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDTO activateUser(Integer userId) throws IdInvalidException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IdInvalidException("User not found with id: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
         
         if (user.isActive()) {
             throw new IdInvalidException("User is already active");
@@ -204,7 +268,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDTO deactivateUser(Integer userId) throws IdInvalidException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IdInvalidException("User not found with id: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
         
         if (!user.isActive()) {
             throw new IdInvalidException("User is already inactive");
@@ -220,7 +284,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDTO verifyUser(Integer userId) throws IdInvalidException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IdInvalidException("User not found with id: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
         
         if (user.isVerified()) {
             throw new IdInvalidException("User is already verified");
@@ -236,7 +300,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDTO updateLastLogin(Integer userId) throws IdInvalidException {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IdInvalidException("User not found with id: " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
         
         user.setLastLoginAt(LocalDateTime.now());
         User savedUser = userRepository.save(user);
