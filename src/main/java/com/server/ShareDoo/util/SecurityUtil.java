@@ -28,12 +28,12 @@ public class SecurityUtil {
 
 
     public String createToken(User user) {
-
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
                 .issueTime(new Date(System.currentTimeMillis()))
                 .expirationTime(new Date(System.currentTimeMillis() + 1000*60*60*24*1))
                 .claim("scope", "ROLE_"+user.getRole())
+                .claim("userId", user.getUserId())
                 .build();
         JWSHeader jwsHeader = new JWSHeader(JWSAlgorithm.HS512);
         Payload payload = new Payload(claims.toJSONObject());
