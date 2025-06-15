@@ -32,15 +32,22 @@ public class SecurityConfiguration {
     @Value("${mathcha_edu.jwt.base64-secret}")
     private String jwtKey;
 
-    private final String[] PUBLIC_ENDPOINTS = {
-            "/api/login",
-            "/api/register",
+    private static final String[] PUBLIC_ENDPOINTS = {
+            "/api/auth/**",
+            "/api/embeddings/**",
+            "/api/suggestions/products",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/swagger-resources/**",
             "/webjars/**",
-            "/api-docs/**"
+            "/api-docs/**",
+            "/api/hf/generate",
+            "/api/hf/test",
+            "/api/embeddings/minilm",
+            "/api/embeddings/multilingual",
+            "/api/embeddings/distiluse",
+            "/api/embeddings/similarity"
     };
 
 

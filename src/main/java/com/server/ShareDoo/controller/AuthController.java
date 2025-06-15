@@ -39,6 +39,8 @@ public class AuthController {
 
     private final UserService userService ;
 
+    private static final String API_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct";
+
     @Operation(
         summary = "User login",
         description = "Authenticates a user and returns a JWT token"

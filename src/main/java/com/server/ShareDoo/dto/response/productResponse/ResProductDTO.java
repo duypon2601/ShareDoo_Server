@@ -1,5 +1,7 @@
 package com.server.ShareDoo.dto.response.productResponse;
 
+import com.server.ShareDoo.enums.Category;
+import com.server.ShareDoo.dto.request.productRequest.ProductDTO;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -13,15 +15,8 @@ public class ResProductDTO {
     private String description;
     private Category category;
     private BigDecimal pricePerDay;
-    private AvailabilityStatus availabilityStatus;
+    private ProductDTO.AvailabilityStatus availabilityStatus;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-    public enum Category {
-        CAMPING, ELECTRONICS, EVENTS, SPORTS, OTHERS
-    }
-
-    public enum AvailabilityStatus {
-        AVAILABLE, UNAVAILABLE
-    }
+    private Double similarityScore;
 }
