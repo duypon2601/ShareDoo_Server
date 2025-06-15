@@ -1,10 +1,10 @@
 package com.server.ShareDoo.dto.request.productRequest;
 
+import com.server.ShareDoo.enums.Category; // Import enum từ package enums
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-
 import java.math.BigDecimal;
 
 @Getter
@@ -13,13 +13,14 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @Data
 public class ProductDTO {
+
     @NotBlank(message = "Name is required")
     private String name;
 
     private String description;
 
     @NotNull(message = "Category is required")
-    private Category category;
+    private Category category; // Sử dụng enum từ package enums
 
     @NotNull(message = "Price per day is required")
     @DecimalMin(value = "0.01", message = "Price per day must be greater than 0")
@@ -27,10 +28,6 @@ public class ProductDTO {
 
     @NotNull(message = "Availability status is required")
     private AvailabilityStatus availabilityStatus;
-
-    public enum Category {
-        CAMPING, ELECTRONICS, EVENTS, SPORTS, OTHERS
-    }
 
     public enum AvailabilityStatus {
         AVAILABLE, UNAVAILABLE
