@@ -36,10 +36,12 @@ public class User {
     @Column(name = "password")
     private String password;
     @Column(name = "is_deleted", columnDefinition = "TINYINT(1) DEFAULT 0")
+    @Builder.Default
     private Boolean isDeleted = false;
     @Enumerated(EnumType.STRING)
     Role role;
     @Column(name = "is_active", columnDefinition = "TINYINT(1) DEFAULT 1")
+    @Builder.Default
     private boolean isActive = true;
     @Column(name = "is_verified", columnDefinition = "TINYINT(1) DEFAULT 0")
     private boolean isVerified;

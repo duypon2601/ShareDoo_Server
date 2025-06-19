@@ -47,7 +47,14 @@ public class SecurityConfiguration {
             "/api/embeddings/minilm",
             "/api/embeddings/multilingual",
             "/api/embeddings/distiluse",
-            "/api/embeddings/similarity"
+            "/api/embeddings/similarity",
+            "/api/suggestions/event",
+            "/api/suggestions/user/**",
+            "/api/suggestions/trends",
+            "/api/suggestions/similar",
+            "/api/suggestions/event-history",
+            "/api/suggestions/seasonal",
+            "/api/suggestions/budget"
     };
 
 

@@ -1,15 +1,13 @@
 package com.server.ShareDoo.enums;
 
 public enum Category {
+    PARTY,
+    FURNITURE,
+    DECORATION,
     CAMPING,
-    HIKING,
-    FISHING,
-    BICYCLING,
-    CITY,
-    BEACH,
-    MOUNTAINS,
-    FOREST,
-    SKIING,
-    SNOWBOARDING,
-    OTHER;
+    OUTDOOR,
+    AUDIO_EQUIPMENT,
+    LIGHTING,
+    COOKING,
+    OTHER
 }

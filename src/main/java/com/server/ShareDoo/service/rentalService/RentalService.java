@@ -50,16 +50,8 @@ public class RentalService {
         return !rentalRepository.existsByUser_UserIdAndProduct_ProductIdAndStatusNotAndDeletedAtIsNull(userId.intValue(), productId, "completed");
     }
 
-    public String getUserRentalHistory(Long userId) {
-        List<Rental> rentals = rentalRepository.findByUser_UserIdAndDeletedAtIsNull(userId.intValue());
-        return rentals.stream()
-            .map(rental -> String.format(
-                "Sản phẩm: %s, Ngày thuê: %s, Trạng thái: %s",
-                rental.getProduct().getName(),
-                rental.getCreatedAt(),
-                rental.getStatus()
-            ))
-            .collect(Collectors.joining("\n"));
+    public List<Product> getUserRentalHistory(Long userId) {
+        return rentalRepository.findProductsByUserId(userId);
     }
 
     public String getRentalTrendsData() {
