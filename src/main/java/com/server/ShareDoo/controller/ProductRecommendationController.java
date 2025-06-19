@@ -1,9 +1,7 @@
 package com.server.ShareDoo.controller;
 
-
 import com.server.ShareDoo.dto.request.productRequest.ProductRecommendationRequest;
 import com.server.ShareDoo.dto.response.productResponse.ResProductDTO;
-
 import com.server.ShareDoo.service.huggingFaceService.ProductRecommendationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
