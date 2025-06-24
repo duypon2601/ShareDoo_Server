@@ -1,6 +1,8 @@
 package com.server.ShareDoo.entity;
 
+
 import com.server.ShareDoo.dto.request.productRequest.ProductDTO;
+import com.server.ShareDoo.enums.Category;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,14 +40,14 @@ public class Product {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ProductDTO.Category category;
-
-    @Column(nullable = false)
-    private BigDecimal pricePerDay;
+    private Category category; // Sử dụng enum từ package enums
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProductDTO.AvailabilityStatus availabilityStatus;
+
+    @Column(nullable = false)
+    private BigDecimal pricePerDay;
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

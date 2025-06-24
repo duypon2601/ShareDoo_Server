@@ -2,6 +2,7 @@ package com.server.ShareDoo.controller;
 
 import com.server.ShareDoo.dto.request.productRequest.ProductDTO;
 import com.server.ShareDoo.dto.response.productResponse.ResProductDTO;
+import com.server.ShareDoo.enums.Category;
 import com.server.ShareDoo.service.productService.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -36,6 +37,7 @@ import java.util.Map;
 public class ProductController {
     private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
     private final ProductService productService;
+    private static final String API_URL = "https://api-inference.huggingface.co/models/tiiuae/falcon-7b-instruct";
 
     @PostMapping
     @Operation(summary = "Create a new product", description = "Allows authenticated users to create a product listing.")
@@ -114,7 +116,7 @@ public class ProductController {
     })
     public ResponseEntity<Page<ResProductDTO>> searchProducts(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) ProductDTO.Category category,
+            @RequestParam(required = false) Category category,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(defaultValue = "0") int page,

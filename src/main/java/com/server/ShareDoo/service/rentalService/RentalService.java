@@ -12,6 +12,8 @@ import com.server.ShareDoo.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class RentalService {
@@ -46,5 +48,30 @@ public class RentalService {
 
     public boolean isRentalAvailable(Long userId, Long productId) {
         return !rentalRepository.existsByUser_UserIdAndProduct_ProductIdAndStatusNotAndDeletedAtIsNull(userId.intValue(), productId, "completed");
+    }
+
+    public String getUserRentalHistory(Long userId) {
+        List<Rental> rentals = rentalRepository.findByUser_UserIdAndDeletedAtIsNull(userId.intValue());
+        return rentals.stream()
+            .map(rental -> String.format(
+                "Sản phẩm: %s, Ngày thuê: %s, Trạng thái: %s",
+                rental.getProduct().getName(),
+                rental.getCreatedAt(),
+                rental.getStatus()
+            ))
+            .collect(Collectors.joining("\n"));
+    }
+
+    public String getRentalTrendsData() {
+        List<Rental> recentRentals = rentalRepository.findTop100ByDeletedAtIsNullOrderByCreatedAtDesc();
+        return recentRentals.stream()
+            .map(rental -> String.format(
+                "Sản phẩm: %s, Danh mục: %s, Ngày thuê: %s, Trạng thái: %s",
+                rental.getProduct().getName(),
+                rental.getProduct().getCategory(),
+                rental.getCreatedAt(),
+                rental.getStatus()
+            ))
+            .collect(Collectors.joining("\n"));
     }
 }

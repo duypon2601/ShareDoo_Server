@@ -32,15 +32,24 @@ public class SecurityConfiguration {
     @Value("${mathcha_edu.jwt.base64-secret}")
     private String jwtKey;
 
-    private final String[] PUBLIC_ENDPOINTS = {
+    private static final String[] PUBLIC_ENDPOINTS = {
             "/api/login",
-            "/api/register",
+            "/api/auth/**",
+            "/api/embeddings/**",
+            "/api/suggestions/products",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/swagger-resources/**",
             "/webjars/**",
-            "/api-docs/**"
+            "/api-docs/**",
+            "/api/hf/generate",
+            "/api/hf/test",
+            "/api/products/recommendations",
+//            "/api/embeddings/minilm",
+//            "/api/embeddings/multilingual",
+//            "/api/embeddings/distiluse",
+//            "/api/embeddings/similarity"
     };
 
 
@@ -50,27 +59,50 @@ public class SecurityConfiguration {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
-        http
-                .csrf(c -> c.disable())
-                .authorizeHttpRequests(
-                        authz -> authz
-                                .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                                .anyRequest().authenticated())
-                .oauth2ResourceServer((oauth2) -> oauth2.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder()).jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                        .authenticationEntryPoint(customAuthenticationEntryPoint)
-                )
-                .exceptionHandling(
-                        exceptions -> exceptions
-                                .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint()) // 401
-                                .accessDeniedHandler(new BearerTokenAccessDeniedHandler())) // 403
-                .formLogin(f -> f.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+//    @Bean
+//    public SecurityFilterChain filterChain(HttpSecurity http, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
+//        http
+//                .csrf(c -> c.disable())
+//                .authorizeHttpRequests(
+//                        authz -> authz
+//                                .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+//                                .anyRequest().authenticated())
+//                .oauth2ResourceServer((oauth2) -> oauth2.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder()).jwtAuthenticationConverter(jwtAuthenticationConverter()))
+//                        .authenticationEntryPoint(customAuthenticationEntryPoint)
+//                )
+//                .exceptionHandling(
+//                        exceptions -> exceptions
+//                                .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint()) // 401
+//                                .accessDeniedHandler(new BearerTokenAccessDeniedHandler())) // 403
+//                .formLogin(f -> f.disable())
+//                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+//
+//        http.addFilterBefore(new Filter(PUBLIC_ENDPOINTS), AbstractPreAuthenticatedProcessingFilter.class);
+//        return http.build();
+//    }
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
+    http
+            .csrf(c -> c.disable())
+            .authorizeHttpRequests(
+                    authz -> authz
+                            .requestMatchers(PUBLIC_ENDPOINTS).permitAll() // Cho phép truy cập công khai
+                            .anyRequest().authenticated())
+            .oauth2ResourceServer((oauth2) -> oauth2
+                    .jwt(jwtConfigurer -> jwtConfigurer
+                            .decoder(jwtDecoder())
+                            .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                    .authenticationEntryPoint(customAuthenticationEntryPoint)
+            )
+            .exceptionHandling(
+                    exceptions -> exceptions
+                            .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint())
+                            .accessDeniedHandler(new BearerTokenAccessDeniedHandler()))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        http.addFilterBefore(new Filter(PUBLIC_ENDPOINTS), AbstractPreAuthenticatedProcessingFilter.class);
-        return http.build();
-    }
+    http.addFilterBefore(new Filter(PUBLIC_ENDPOINTS), AbstractPreAuthenticatedProcessingFilter.class);
+    return http.build();
+}
 
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
