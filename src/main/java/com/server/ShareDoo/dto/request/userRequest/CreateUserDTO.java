@@ -14,6 +14,8 @@ public class CreateUserDTO {
     private String name;
     private String email;
     private String address;
+    private String imageUrl;
+    private String location;
     private String username;
     private String password;
     private Role role;

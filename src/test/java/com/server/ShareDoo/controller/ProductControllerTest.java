@@ -3,6 +3,7 @@ package com.server.ShareDoo.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.server.ShareDoo.dto.request.productRequest.ProductDTO;
 import com.server.ShareDoo.dto.request.userRequest.LoginDTO;
+import com.server.ShareDoo.enums.Category;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,8 +52,11 @@ class ProductControllerTest {
         ProductDTO productDTO = new ProductDTO();
         productDTO.setName("Test Product");
         productDTO.setDescription("Test Description");
+        productDTO.setImageUrl("https://example.com/image.jpg");
+        productDTO.setLocation("Ho Chi Minh City");
+        productDTO.setCategory(Category.CAMPING);
         productDTO.setPricePerDay(BigDecimal.valueOf(100.0));
-        // Thêm các trường cần thiết khác nếu có
+        productDTO.setAvailabilityStatus(ProductDTO.AvailabilityStatus.AVAILABLE);
 
         mockMvc.perform(post("/api/products")
                 .header("Authorization", "Bearer " + token)

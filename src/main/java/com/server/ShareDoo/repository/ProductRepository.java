@@ -27,7 +27,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findActiveById(Long id);
 
     @Query("SELECT p FROM Product p WHERE p.deletedAt IS NULL " +
-            "AND (:keyword IS NULL OR p.name LIKE %:keyword% OR p.description LIKE %:keyword%) " +
+            "AND (:keyword IS NULL OR p.name LIKE %:keyword% OR p.description LIKE %:keyword% OR p.location LIKE %:keyword%) " +
             "AND (:category IS NULL OR p.category = :category) " +
             "AND (:minPrice IS NULL OR p.pricePerDay >= :minPrice) " +
             "AND (:maxPrice IS NULL OR p.pricePerDay <= :maxPrice)")

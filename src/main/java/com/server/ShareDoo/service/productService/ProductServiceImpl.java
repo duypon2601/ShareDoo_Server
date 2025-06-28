@@ -69,6 +69,10 @@ public class ProductServiceImpl implements ProductService {
         }
         product.setName(productDTO.getName());
         product.setDescription(productDTO.getDescription());
+
+        product.setImageUrl(productDTO.getImageUrl());
+        product.setLocation(productDTO.getLocation());
+
         product.setCategory(productDTO.getCategory());
         product.setPricePerDay(productDTO.getPricePerDay());
         product.setAvailabilityStatus(productDTO.getAvailabilityStatus());
@@ -100,12 +104,15 @@ public class ProductServiceImpl implements ProductService {
         List<Product> availableProducts = productRepository.findByDeletedAtIsNull();
         return availableProducts.stream()
             .map(product -> String.format(
-                "ID: %d, Tên: %s, Danh mục: %s, Giá: %s, Mô tả: %s",
+
+                "ID: %d, Tên: %s, Danh mục: %s, Giá: %s, Mô tả: %s, Hình ảnh: %s, Địa điểm: %s",
                 product.getProductId(),
                 product.getName(),
                 product.getCategory(),
                 product.getPricePerDay(),
-                product.getDescription()
+                product.getDescription(),
+                product.getImageUrl(),
+                product.getLocation()
             ))
             .collect(Collectors.joining("\n"));
     }

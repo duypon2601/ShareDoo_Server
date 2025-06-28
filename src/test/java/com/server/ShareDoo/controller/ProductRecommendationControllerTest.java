@@ -47,8 +47,7 @@ class ProductRecommendationControllerTest {
         req.setEventDescription("Birthday party");
         req.setLocation("Hanoi");
         req.setMaxPricePerDay(BigDecimal.valueOf(200.0));
-
-        mockMvc.perform(post("/api/products/recommend")
+        mockMvc.perform(post("/api/products/recommendations")
                 .header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))
