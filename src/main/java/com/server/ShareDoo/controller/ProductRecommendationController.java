@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +19,7 @@ import java.util.List;
 @RestController
 @SecurityRequirement(name = "api")
 @RequiredArgsConstructor
+@Slf4j
 @RequestMapping("/api/products/recommendations")
 public class ProductRecommendationController {
 
@@ -31,7 +33,22 @@ public class ProductRecommendationController {
     })
     public ResponseEntity<List<ResProductDTO>> getEventRecommendations(
             @Valid @RequestBody ProductRecommendationRequest request) {
+        log.info("Received recommendation request for event: {}", request.getEventDescription());
         List<ResProductDTO> recommendations = recommendationService.recommendProductsForEvent(request);
+        log.info("Returning {} recommendations", recommendations.size());
         return ResponseEntity.ok(recommendations);
+    }
+
+    @PostMapping("/test")
+    @Operation(summary = "Test AI recommendation with sample data")
+    public ResponseEntity<String> testRecommendation() {
+        ProductRecommendationRequest testRequest = new ProductRecommendationRequest();
+        testRequest.setEventDescription("I want to go camping in the mountains this weekend");
+        testRequest.setMaxPricePerDay(new java.math.BigDecimal("100"));
+        
+        log.info("Testing AI recommendation with: {}", testRequest.getEventDescription());
+        List<ResProductDTO> recommendations = recommendationService.recommendProductsForEvent(testRequest);
+        
+        return ResponseEntity.ok("Test completed. Found " + recommendations.size() + " recommendations");
     }
 }
