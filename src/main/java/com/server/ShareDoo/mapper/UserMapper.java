@@ -12,6 +12,8 @@ public class UserMapper {
         userDTO.setName(user.getName());
         userDTO.setEmail(user.getEmail());
         userDTO.setAddress(user.getAddress());
+        userDTO.setImageUrl(user.getImageUrl());
+        userDTO.setLocation(user.getLocation());
         userDTO.setUsername(user.getUsername());
         userDTO.setPassword(user.getPassword());
         userDTO.setRole(user.getRole());
@@ -29,6 +31,8 @@ public class UserMapper {
         user.setName(userDTO.getName());
         user.setEmail(userDTO.getEmail());
         user.setAddress(userDTO.getAddress());
+        user.setImageUrl(userDTO.getImageUrl());
+        user.setLocation(userDTO.getLocation());
         user.setUsername(userDTO.getUsername());
         user.setRole(userDTO.getRole());
         user.setActive(userDTO.isActive());
@@ -46,6 +50,8 @@ public class UserMapper {
         resCreateUserDTO.setName(userDTO.getName());
         resCreateUserDTO.setEmail(userDTO.getEmail());
         resCreateUserDTO.setAddress(userDTO.getAddress());
+        resCreateUserDTO.setImageUrl(userDTO.getImageUrl());
+        resCreateUserDTO.setLocation(userDTO.getLocation());
         resCreateUserDTO.setUsername(userDTO.getUsername());
         resCreateUserDTO.setRole(userDTO.getRole());
         resCreateUserDTO.setActive(userDTO.isActive());

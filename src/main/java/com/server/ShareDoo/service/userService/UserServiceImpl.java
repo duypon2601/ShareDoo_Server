@@ -88,6 +88,8 @@ public class UserServiceImpl implements UserService {
         user.setName(createUserDTO.getName());
         user.setEmail(createUserDTO.getEmail());
         user.setAddress(createUserDTO.getAddress());
+        user.setImageUrl(createUserDTO.getImageUrl());
+        user.setLocation(createUserDTO.getLocation());
         user.setUsername(createUserDTO.getUsername());
         // Encode password before saving
         user.setPassword(passwordEncoder.encode(createUserDTO.getPassword()));
@@ -136,6 +138,8 @@ public class UserServiceImpl implements UserService {
         res.setName(user.getName());
         res.setEmail(user.getEmail());
         res.setAddress(user.getAddress());
+        res.setImageUrl(user.getImageUrl());
+        res.setLocation(user.getLocation());
         res.setUsername(user.getUsername());
         res.setRole(user.getRole());
         res.setActive(user.isActive());
@@ -160,7 +164,9 @@ public class UserServiceImpl implements UserService {
                     user.getUsername().toLowerCase().contains(username.toLowerCase());
                 boolean matchesEmail = email == null || 
                     user.getEmail().toLowerCase().contains(email.toLowerCase());
-                return matchesUsername && matchesEmail;
+                boolean matchesLocation = username == null || 
+                    (user.getLocation() != null && user.getLocation().toLowerCase().contains(username.toLowerCase()));
+                return matchesUsername && matchesEmail || matchesLocation;
             })
             .collect(Collectors.toList());
 
@@ -211,6 +217,8 @@ public class UserServiceImpl implements UserService {
         existingUser.setName(userDTO.getName());
         existingUser.setEmail(userDTO.getEmail());
         existingUser.setAddress(userDTO.getAddress());
+        existingUser.setImageUrl(userDTO.getImageUrl());
+        existingUser.setLocation(userDTO.getLocation());
         existingUser.setUpdatedAt(LocalDateTime.now());
 
         User savedUser = userRepository.save(existingUser);

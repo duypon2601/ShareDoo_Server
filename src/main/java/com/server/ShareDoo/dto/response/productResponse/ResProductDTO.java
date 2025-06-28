@@ -13,6 +13,8 @@ public class ResProductDTO {
     private Long userId;
     private String name;
     private String description;
+    private String imageUrl;
+    private String location;
     private Category category;
     private BigDecimal pricePerDay;
     private ProductDTO.AvailabilityStatus availabilityStatus;

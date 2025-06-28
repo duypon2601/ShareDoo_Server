@@ -38,6 +38,10 @@ public class Product {
 
     private String description;
 
+    private String imageUrl;
+
+    private String location;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Category category; // Sử dụng enum từ package enums

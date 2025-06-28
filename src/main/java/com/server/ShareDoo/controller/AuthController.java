@@ -66,29 +66,29 @@ public class AuthController {
     }
 
 
-    @Operation(
-        summary = "User registration",
-        description = "Registers a new user in the system"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "201",
-            description = "User registered successfully",
-            content = @Content(schema = @Schema(implementation = UserDTO.class))
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Invalid input data"
-        )
-    })
-    @PostMapping("/register")
-    public ResponseEntity<UserDTO> createUser(
-        @Parameter(description = "User registration data", required = true)
-        @Valid @RequestBody UserDTO userDTO
-    ) throws IdInvalidException {
-        UserDTO createdUser = authService.register(userDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
-    }
+//    @Operation(
+//        summary = "User registration",
+//        description = "Registers a new user in the system"
+//    )
+//    @ApiResponses(value = {
+//        @ApiResponse(
+//            responseCode = "201",
+//            description = "User registered successfully",
+//            content = @Content(schema = @Schema(implementation = UserDTO.class))
+//        ),
+//        @ApiResponse(
+//            responseCode = "400",
+//            description = "Invalid input data"
+//        )
+//    })
+//    @PostMapping("/registerr")
+//    public ResponseEntity<UserDTO> createUser(
+//        @Parameter(description = "User registration data", required = true)
+//        @Valid @RequestBody UserDTO userDTO
+//    ) throws IdInvalidException {
+//        UserDTO createdUser = authService.register(userDTO);
+//        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+//    }
 
 
 //    @PostMapping("/login/student")

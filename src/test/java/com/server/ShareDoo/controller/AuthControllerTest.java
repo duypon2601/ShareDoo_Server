@@ -45,6 +45,10 @@ class AuthControllerTest {
         userDTO.setUsername("newuser");
         userDTO.setPassword("newpassword");
         userDTO.setEmail("newuser@example.com");
+        userDTO.setName("New User");
+        userDTO.setAddress("123 Test Street");
+        userDTO.setImageUrl("https://example.com/avatar.jpg");
+        userDTO.setLocation("Ho Chi Minh City");
         // Thêm các trường cần thiết khác nếu có
 
         mockMvc.perform(post("/api/register")

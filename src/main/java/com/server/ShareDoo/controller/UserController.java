@@ -33,7 +33,7 @@ public class UserController {
 
     private final UserService userService;
 
-    @PostMapping
+    @PostMapping("/register")
     public ResponseEntity<RestResponse<ResCreateUserDTO>> createUser(@RequestBody CreateUserDTO createUserDTO) throws IdInvalidException {
         ResCreateUserDTO createdUser = userService.createUser(createUserDTO);
         RestResponse<ResCreateUserDTO> response = new RestResponse<>();
