@@ -66,6 +66,7 @@ public class AuthController {
     }
 
 
+
 //    @Operation(
 //        summary = "User registration",
 //        description = "Registers a new user in the system"

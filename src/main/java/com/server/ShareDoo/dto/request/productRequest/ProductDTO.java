@@ -23,6 +23,7 @@ public class ProductDTO {
 
     private String location;
 
+
     @NotNull(message = "Category is required")
     private Category category; // Sử dụng enum từ package enums
 

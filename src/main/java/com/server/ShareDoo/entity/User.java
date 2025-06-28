@@ -31,10 +31,12 @@ public class User {
     private String email;
     @Column(name = "address")
     private String address;
+
     @Column(name = "image_url")
     private String imageUrl;
     @Column(name = "location")
     private String location;
+
     @Column(name = "username", unique = true)
     private String username;
     @Column(name = "password")

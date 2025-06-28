@@ -18,6 +18,7 @@ public interface ProductMapper {
     @Mapping(target = "description", source = "description")
     @Mapping(target = "imageUrl", source = "imageUrl")
     @Mapping(target = "location", source = "location")
+
     @Mapping(target = "category", source = "category")
     @Mapping(target = "pricePerDay", source = "pricePerDay")
     @Mapping(target = "availabilityStatus", source = "availabilityStatus")

@@ -88,8 +88,10 @@ public class UserServiceImpl implements UserService {
         user.setName(createUserDTO.getName());
         user.setEmail(createUserDTO.getEmail());
         user.setAddress(createUserDTO.getAddress());
+
         user.setImageUrl(createUserDTO.getImageUrl());
         user.setLocation(createUserDTO.getLocation());
+
         user.setUsername(createUserDTO.getUsername());
         // Encode password before saving
         user.setPassword(passwordEncoder.encode(createUserDTO.getPassword()));
