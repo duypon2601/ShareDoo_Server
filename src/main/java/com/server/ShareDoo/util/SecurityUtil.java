@@ -7,6 +7,8 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.stereotype.Service;
 
@@ -14,9 +16,6 @@ import java.util.Date;
 
 @Service
 public class SecurityUtil {
-
-
-
 
     public static final MacAlgorithm JWT_ALGORITHM = MacAlgorithm.HS512;
 
@@ -26,6 +25,14 @@ public class SecurityUtil {
     @Value("${mathcha_edu.jwt.token-validity-in-seconds}")
     private long jwtExpiration;
 
+    public Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof org.springframework.security.oauth2.jwt.Jwt) {
+            org.springframework.security.oauth2.jwt.Jwt jwt = (org.springframework.security.oauth2.jwt.Jwt) authentication.getPrincipal();
+            return jwt.getClaim("userId");
+        }
+        throw new RuntimeException("User not authenticated");
+    }
 
     public String createToken(User user) {
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
