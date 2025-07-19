@@ -23,10 +23,10 @@ public class ApplicationInitConfig {
     ApplicationRunner applicationRunner(UserRepository userRepository){
         return args -> {
 
-            if (!userRepository.existsByUsername("string")) {
+            if (!userRepository.existsByUsername("admin")) {
                 User admin = new User();
-                admin.setUsername("string");
-                admin.setPassword(passwordEncoder.encode("string"));
+                admin.setUsername("admin");
+                admin.setPassword(passwordEncoder.encode("admin"));
                 admin.setRole(Role.ADMIN);
                 userRepository.save(admin);
             }
