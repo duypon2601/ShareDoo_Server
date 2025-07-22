@@ -16,4 +16,5 @@ public class PaymentLinkResponse {
     private BigDecimal amount;
     private String status;
     private String message;
+    private String qrCode; // Thêm trường này
 } 

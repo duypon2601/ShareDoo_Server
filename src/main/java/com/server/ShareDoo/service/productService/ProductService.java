@@ -19,6 +19,8 @@ public interface ProductService {
     Page<ResProductDTO> searchProducts(String keyword, Category category, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
     String getAvailableProductsAsString();
     List<Product> getAvailableProducts();
+    List<ResProductDTO> getMyProducts(Long userId);
+    List<ResProductDTO> getMyActiveProducts(Long userId);
 //    List<Product> getProductsByCategory(Category category);
 //    List<Product> getAvailableProductsByCategory(Category category);
 //    List<Product> getUserProducts(Integer userId);

@@ -16,11 +16,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.server.ShareDoo.config.PayOSConfig;
+import org.springframework.beans.factory.annotation.Autowired;
+import java.util.HashMap;
+import java.util.Map;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +38,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final PayOSConfig payOSConfig;
     
     @Override
     @Transactional
@@ -79,22 +87,50 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentLinkResponse createPaymentLink(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
-        
-        // Simulate PayOS payment link creation
-        String checkoutUrl = "https://payos.vn/checkout/" + order.getOrderCode();
-        
+
+        // Chuẩn bị payload gửi lên PayOS
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("amount", order.getTotalAmount().intValue());
+        payload.put("description", order.getDescription());
+        payload.put("returnUrl", payOSConfig.getReturnUrl());
+        payload.put("cancelUrl", payOSConfig.getCancelUrl());
+
+        // Chuẩn bị header
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("x-client-id", payOSConfig.getClientId());
+        headers.set("x-api-key", payOSConfig.getApiKey());
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+        RestTemplate restTemplate = new RestTemplate();
+        String payosApiUrl = "https://api.payos.vn/v1/payment-requests";
+
+        ResponseEntity<String> response = restTemplate.postForEntity(payosApiUrl, request, String.class);
+        String checkoutUrl = null;
+        String qrCode = null;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> json = mapper.readValue(response.getBody(), Map.class);
+            Map<String, Object> data = (Map<String, Object>) json.get("data");
+            checkoutUrl = (String) data.get("checkoutUrl");
+            qrCode = (String) data.get("qrCode");
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi parse response từ PayOS", e);
+        }
+
         order.setPaymentUrl(checkoutUrl);
         order.setPaymentOrderCode(order.getOrderCode());
         order.setStatus(Order.OrderStatus.WAIT_FOR_PAYMENT);
         orderRepository.save(order);
-        
+
         return new PaymentLinkResponse(
                 checkoutUrl,
                 order.getOrderCode(),
                 order.getId(),
                 order.getTotalAmount(),
                 order.getStatus().name(),
-                "Payment link created successfully"
+                "Payment link created successfully",
+                qrCode
         );
     }
     
