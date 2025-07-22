@@ -88,7 +88,7 @@ public class PaymentServiceImpl implements PaymentService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException("Order not found"));
 
-        // Chuẩn bị payload gửi lên PayOS
+        // Chuẩn bị payload gửi lên proxy PayOS
         Map<String, Object> payload = new HashMap<>();
         payload.put("amount", order.getTotalAmount().intValue());
         payload.put("description", order.getDescription());
@@ -98,14 +98,13 @@ public class PaymentServiceImpl implements PaymentService {
         // Chuẩn bị header
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-client-id", payOSConfig.getClientId());
-        headers.set("x-api-key", payOSConfig.getApiKey());
+        // Không cần gửi apiKey/clientId ở đây, proxy sẽ tự thêm
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
         RestTemplate restTemplate = new RestTemplate();
-        String payosApiUrl = "https://api.payos.vn/v1/payment-requests";
+        String proxyUrl = "https://payos-proxy-production-5479.up.railway.app/payos";
 
-        ResponseEntity<String> response = restTemplate.postForEntity(payosApiUrl, request, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(proxyUrl, request, String.class);
         String checkoutUrl = null;
         String qrCode = null;
         try {
@@ -115,7 +114,7 @@ public class PaymentServiceImpl implements PaymentService {
             checkoutUrl = (String) data.get("checkoutUrl");
             qrCode = (String) data.get("qrCode");
         } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi parse response từ PayOS", e);
+            throw new RuntimeException("Lỗi khi parse response từ proxy PayOS", e);
         }
 
         order.setPaymentUrl(checkoutUrl);
