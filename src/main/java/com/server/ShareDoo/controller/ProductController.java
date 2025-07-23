@@ -29,7 +29,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-@CrossOrigin("*")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 @RestController
 @AllArgsConstructor
 @SecurityRequirement(name = "api")
