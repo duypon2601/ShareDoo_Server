@@ -10,10 +10,15 @@ import com.server.ShareDoo.repository.RentalRepository;
 import com.server.ShareDoo.repository.UserRepository;
 import com.server.ShareDoo.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+import vn.payos.PayOS;
+import vn.payos.type.ItemData;
+import vn.payos.type.PaymentData;
+import vn.payos.type.CheckoutResponseData;
 
 @Service
 public class RentalService {
@@ -30,6 +35,15 @@ public class RentalService {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private PayOS payOS;
+
+    @Value("${PAYOS_RETURN_URL}")
+    private String payosReturnUrl;
+
+    @Value("${PAYOS_CANCEL_URL}")
+    private String payosCancelUrl;
+
     public RentalResponseDTO createRental(RentalRequestDTO rentalRequestDTO) {
         Rental rental = rentalMapper.toEntity(rentalRequestDTO);
         
@@ -42,8 +56,41 @@ public class RentalService {
         rental.setProduct(product);
         rental.setStatus("pending");
         rental.setDeletedAt(null);
+        // Sinh orderCode cho PayOS và lưu vào rental
+        long orderCode = System.currentTimeMillis() % 1000000;
+        rental.setOrderCode(orderCode);
         Rental savedRental = rentalRepository.save(rental);
-        return rentalMapper.toDto(savedRental);
+
+        // Tạo payment link PayOS
+        String paymentUrl = null;
+        try {
+            ItemData item = ItemData.builder()
+                .name(product.getName())
+                .price(product.getPricePerDay().intValue())
+                .quantity(1)
+                .build();
+            // Tạo mô tả ngắn gọn, tối đa 25 ký tự cho PayOS
+            String description = ("Thuê: " + product.getName());
+            if (description.length() > 25) {
+                description = description.substring(0, 25);
+            }
+            PaymentData paymentData = PaymentData.builder()
+                .orderCode(orderCode)
+                .amount(product.getPricePerDay().intValue())
+                .description(description)
+                .returnUrl(payosReturnUrl)
+                .cancelUrl(payosCancelUrl)
+                .item(item)
+                .build();
+            CheckoutResponseData data = payOS.createPaymentLink(paymentData);
+            paymentUrl = data.getCheckoutUrl();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        RentalResponseDTO responseDTO = rentalMapper.toDto(savedRental);
+        responseDTO.setPaymentUrl(paymentUrl); // Cần thêm field paymentUrl vào RentalResponseDTO
+        return responseDTO;
     }
 
     public boolean isRentalAvailable(Long userId, Long productId) {
@@ -73,5 +120,12 @@ public class RentalService {
                 rental.getStatus()
             ))
             .collect(Collectors.joining("\n"));
+    }
+
+    public Rental findByOrderCode(Long orderCode) {
+        return rentalRepository.findByOrderCode(orderCode);
+    }
+    public Rental save(Rental rental) {
+        return rentalRepository.save(rental);
     }
 }

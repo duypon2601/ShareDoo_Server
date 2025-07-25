@@ -1,44 +1,23 @@
 package com.server.ShareDoo.config;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import vn.payos.PayOS;
 
-@Component
+@Configuration
 public class PayOSConfig {
-
-    @Value("${payos.client-id}")
+    @Value("${PAYOS_CLIENT_ID}")
     private String clientId;
 
-    @Value("${payos.api-key}")
+    @Value("${PAYOS_API_KEY}")
     private String apiKey;
 
-    @Value("${payos.checksum-key}")
+    @Value("${PAYOS_CHECKSUM_KEY}")
     private String checksumKey;
 
-    @Value("${payos.return-url}")
-    private String returnUrl;
-
-    @Value("${payos.cancel-url}")
-    private String cancelUrl;
-
-    // Getters for the properties
-    public String getClientId() {
-        return clientId;
-    }
-
-    public String getApiKey() {
-        return apiKey;
-    }
-
-    public String getChecksumKey() {
-        return checksumKey;
-    }
-
-    public String getReturnUrl() {
-        return returnUrl;
-    }
-
-    public String getCancelUrl() {
-        return cancelUrl;
+    @Bean
+    public PayOS payOS() {
+        return new PayOS(clientId, apiKey, checksumKey);
     }
 } 

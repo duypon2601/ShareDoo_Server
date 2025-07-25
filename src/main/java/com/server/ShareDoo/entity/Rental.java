@@ -32,6 +32,9 @@ public class Rental {
     @Column(name = "status", nullable = false)
     private String status;
 
+    @Column(name = "order_code")
+    private Long orderCode;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

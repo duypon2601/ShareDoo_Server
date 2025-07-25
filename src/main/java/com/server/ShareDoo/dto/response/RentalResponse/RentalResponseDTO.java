@@ -12,4 +12,5 @@ public class RentalResponseDTO {
     private LocalDateTime endDate;
     private Double totalPrice;
     private String status;
+    private String paymentUrl;
 }
