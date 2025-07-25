@@ -135,4 +135,8 @@ public class RentalService {
     public List<Rental> getRentalListByUser(Long userId) {
         return rentalRepository.findByUser_UserIdAndDeletedAtIsNull(userId.intValue());
     }
+
+    public Rental findById(Long id) {
+        return rentalRepository.findById(id).orElse(null);
+    }
 }

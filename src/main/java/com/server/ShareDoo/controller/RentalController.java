@@ -109,4 +109,15 @@ public class RentalController {
         }
         return ResponseEntity.ok(rentalService.getAllRentals());
     }
+
+    // API lấy chi tiết đơn thuê thực tế cho FE
+    @GetMapping("/detail")
+    public ResponseEntity<?> getRentalDetail(@RequestParam(value = "id", required = false) Long id,
+                                             @RequestParam(value = "orderCode", required = false) Long orderCode) {
+        Rental rental = null;
+        if (id != null) rental = rentalService.findById(id);
+        else if (orderCode != null) rental = rentalService.findByOrderCode(orderCode);
+        if (rental != null) return ResponseEntity.ok(rental);
+        return ResponseEntity.badRequest().body("Rental not found");
+    }
 }
