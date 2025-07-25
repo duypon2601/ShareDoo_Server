@@ -128,4 +128,11 @@ public class RentalService {
     public Rental save(Rental rental) {
         return rentalRepository.save(rental);
     }
+
+    public List<Rental> getAllRentals() {
+        return rentalRepository.findAll();
+    }
+    public List<Rental> getRentalListByUser(Long userId) {
+        return rentalRepository.findByUser_UserIdAndDeletedAtIsNull(userId.intValue());
+    }
 }
