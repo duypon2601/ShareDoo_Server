@@ -123,6 +123,23 @@ public class ProductServiceImpl implements ProductService {
                 ProductDTO.AvailabilityStatus.AVAILABLE);
     }
 
+    @Override
+    public List<ResProductDTO> getMyProducts(Long userId) {
+        List<Product> products = productRepository.findByUserId(userId.intValue());
+        return products.stream()
+                .map(productMapper::toResDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ResProductDTO> getMyActiveProducts(Long userId) {
+        List<Product> products = productRepository.findByUserIdAndAvailabilityStatus(
+                userId.intValue(), ProductDTO.AvailabilityStatus.AVAILABLE);
+        return products.stream()
+                .map(productMapper::toResDTO)
+                .collect(Collectors.toList());
+    }
+
     private String getCategoryDisplayName(Category category) {
         return switch (category) {
             case CAMPING -> "Cắm trại";

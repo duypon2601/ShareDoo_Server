@@ -26,9 +26,10 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 
-@CrossOrigin("*")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 @RestController
 @AllArgsConstructor
 @SecurityRequirement(name = "api")
@@ -126,6 +127,30 @@ public class ProductController {
         Sort.Direction sortDirection = Sort.Direction.fromString(direction.toUpperCase());
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
         return ResponseEntity.ok(productService.searchProducts(keyword, category, minPrice, maxPrice, pageable));
+    }
+
+    @GetMapping("/my-products")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    @Operation(summary = "Get user's own products", description = "Retrieves all products created by the authenticated user.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "User products retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<List<ResProductDTO>> getMyProducts(Authentication authentication) {
+        Long userId = getUserIdFromAuthentication(authentication);
+        return ResponseEntity.ok(productService.getMyProducts(userId));
+    }
+
+    @GetMapping("/my-products/active")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    @Operation(summary = "Get user's active products", description = "Retrieves active products created by the authenticated user.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Active user products retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<List<ResProductDTO>> getMyActiveProducts(Authentication authentication) {
+        Long userId = getUserIdFromAuthentication(authentication);
+        return ResponseEntity.ok(productService.getMyActiveProducts(userId));
     }
 
     private Long getUserIdFromAuthentication(Authentication authentication) {

@@ -10,4 +10,5 @@ public interface RentalRepository extends JpaRepository<Rental, Long> {
     boolean existsByUser_UserIdAndProduct_ProductIdAndStatusNotAndDeletedAtIsNull(Integer userId, Long productId, String status);
     List<Rental> findByUser_UserIdAndDeletedAtIsNull(Integer userId);
     List<Rental> findTop100ByDeletedAtIsNullOrderByCreatedAtDesc();
+    Rental findByOrderCode(Long orderCode);
 }
