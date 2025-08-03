@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import vn.payos.PayOS;
@@ -91,57 +92,6 @@ public class WalletController {
         }
     }
 
-    // Nhận webhook từ PayOS để xác nhận nạp tiền thành công
-    @PostMapping("/payos-webhook")
-    public ResponseEntity<String> handlePayOSWebhook(@RequestBody ObjectNode webhookBody) {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            Webhook webhook = objectMapper.treeToValue(webhookBody, Webhook.class);
-            WebhookData data = payOS.verifyPaymentWebhookData(webhook);
-            String status = null;
-            try {
-                status = (String) data.getClass().getMethod("getTransactionStatus").invoke(data);
-            } catch (Exception ignore) {}
-            if (status == null) {
-                try {
-                    status = (String) data.getClass().getMethod("getStatus").invoke(data);
-                } catch (Exception ignore) {}
-            }
-            Long orderCode = null;
-            try {
-                orderCode = (Long) data.getClass().getMethod("getOrderCode").invoke(data);
-            } catch (Exception ignore) {}
-            Integer userId = null;
-            try {
-                userId = Integer.parseInt(data.getClass().getMethod("getCustomerId").invoke(data).toString());
-            } catch (Exception ignore) {}
-            if (orderCode != null && status != null && "PAID".equalsIgnoreCase(status)) {
-                // Tìm user theo userId nếu có, hoặc map orderCode về user nếu cần
-                // Ở đây giả sử orderCode chứa userId ở cuối
-                if (userId == null) {
-                    userId = (int) (orderCode % 1000000); // fallback nếu customerId không truyền
-                }
-                Optional<User> userOpt = userRepository.findById(userId);
-                if (userOpt.isPresent()) {
-                    User user = userOpt.get();
-                    walletService.deposit(user, new BigDecimal(data.getClass().getMethod("getAmount").invoke(data).toString()), "Nạp tiền qua PayOS");
-                    return ResponseEntity.ok("Nạp tiền thành công vào ví");
-                }
-            }
-            return ResponseEntity.ok("Webhook received");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body("Invalid webhook");
-        }
-    }
-    // Nạp tiền vào ví (nội bộ, không dùng PayOS)
-    @PostMapping("/deposit")
-    public ResponseEntity<WalletDTO> deposit(@RequestParam BigDecimal amount, @RequestParam(required = false) String description, Principal principal) {
-        Optional<User> userOpt = userRepository.findByUsername(principal.getName());
-        if (userOpt.isEmpty()) return ResponseEntity.badRequest().build();
-        Wallet wallet = walletService.deposit(userOpt.get(), amount, description);
-        return ResponseEntity.ok(walletMapper.toDTO(wallet));
-    }
 
     // Yêu cầu rút tiền
     @PostMapping("/withdraw")
@@ -161,4 +111,92 @@ public class WalletController {
         List<WalletTransactionDTO> dtos = transactions.stream().map(walletTransactionMapper::toDTO).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);
     }
+
+    // Nạp tiền vào ví dựa trên orderCode (dùng cho redirect sau thanh toán PayOS thành công)
+    @PostMapping("/deposit-by-ordercode")
+    public ResponseEntity<?> depositByOrderCode(@RequestBody Map<String, Object> body) {
+        try {
+            final Long orderCode = body.get("orderCode") != null ? Long.valueOf(body.get("orderCode").toString()) : null;
+final String status = body.get("status") != null ? body.get("status").toString() : null;
+            if (orderCode == null || status == null || !"PAID".equalsIgnoreCase(status)) {
+                return ResponseEntity.badRequest().body("Thiếu orderCode hoặc trạng thái không hợp lệ");
+            }
+            // 1. Kiểm tra có phải giao dịch nạp tiền không (orderCode có thuộc về giao dịch ví không)
+            // 2. Tìm userId từ orderCode (giống logic webhook: userId = (int) (orderCode % 1000000))
+            int userId = (int) (orderCode % 1000000);
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty()) return ResponseEntity.badRequest().body("Không tìm thấy user từ orderCode");
+            User user = userOpt.get();
+            // 3. Kiểm tra đã cộng tiền chưa (tránh cộng lặp)
+            // Có thể kiểm tra lịch sử giao dịch ví với description chứa orderCode
+            List<WalletTransaction> transactions = walletService.getWalletTransactions(user);
+            boolean alreadyDeposited = transactions.stream().anyMatch(
+                tx -> tx.getDescription() != null && tx.getDescription().contains(orderCode.toString()) && tx.getType() == WalletTransaction.TransactionType.DEPOSIT
+            );
+            if (alreadyDeposited) {
+                return ResponseEntity.ok("Giao dịch đã được cộng vào ví trước đó");
+            }
+            // 4. Lấy số tiền từ FE truyền lên (bắt buộc phải truyền amount)
+            final BigDecimal amount = body.get("amount") != null ? new BigDecimal(body.get("amount").toString()) : null;
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) return ResponseEntity.badRequest().body("Thiếu hoặc sai amount");
+            // 5. Tiến hành cộng tiền vào ví
+            String desc = "Nạp tiền qua PayOS orderCode: " + orderCode;
+            walletService.deposit(user, amount, desc);
+            return ResponseEntity.ok("Nạp tiền vào ví thành công");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Lỗi xử lý nạp tiền theo orderCode");
+        }
+    }
 }
+// Nhận webhook từ PayOS để xác nhận nạp tiền thành công
+//    @PostMapping("/payos-webhook")
+//    public ResponseEntity<String> handlePayOSWebhook(@RequestBody ObjectNode webhookBody) {
+//        try {
+//            ObjectMapper objectMapper = new ObjectMapper();
+//            Webhook webhook = objectMapper.treeToValue(webhookBody, Webhook.class);
+//            WebhookData data = payOS.verifyPaymentWebhookData(webhook);
+//            String status = null;
+//            try {
+//                status = (String) data.getClass().getMethod("getTransactionStatus").invoke(data);
+//            } catch (Exception ignore) {}
+//            if (status == null) {
+//                try {
+//                    status = (String) data.getClass().getMethod("getStatus").invoke(data);
+//                } catch (Exception ignore) {}
+//            }
+//            Long orderCode = null;
+//            try {
+//                orderCode = (Long) data.getClass().getMethod("getOrderCode").invoke(data);
+//            } catch (Exception ignore) {}
+//            Integer userId = null;
+//            try {
+//                userId = Integer.parseInt(data.getClass().getMethod("getCustomerId").invoke(data).toString());
+//            } catch (Exception ignore) {}
+//            if (orderCode != null && status != null && "PAID".equalsIgnoreCase(status)) {
+//                // Tìm user theo userId nếu có, hoặc map orderCode về user nếu cần
+//                // Ở đây giả sử orderCode chứa userId ở cuối
+//                if (userId == null) {
+//                    userId = (int) (orderCode % 1000000); // fallback nếu customerId không truyền
+//                }
+//                Optional<User> userOpt = userRepository.findById(userId);
+//                if (userOpt.isPresent()) {
+//                    User user = userOpt.get();
+//                    walletService.deposit(user, new BigDecimal(data.getClass().getMethod("getAmount").invoke(data).toString()), "Nạp tiền qua PayOS");
+//                    return ResponseEntity.ok("Nạp tiền thành công vào ví");
+//                }
+//            }
+//            return ResponseEntity.ok("Webhook received");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return ResponseEntity.badRequest().body("Invalid webhook");
+//        }
+//    }
+//    // Nạp tiền vào ví (nội bộ, không dùng PayOS)
+//    @PostMapping("/deposit")
+//    public ResponseEntity<WalletDTO> deposit(@RequestParam BigDecimal amount, @RequestParam(required = false) String description, Principal principal) {
+//        Optional<User> userOpt = userRepository.findByUsername(principal.getName());
+//        if (userOpt.isEmpty()) return ResponseEntity.badRequest().build();
+//        Wallet wallet = walletService.deposit(userOpt.get(), amount, description);
+//        return ResponseEntity.ok(walletMapper.toDTO(wallet));
+//    }

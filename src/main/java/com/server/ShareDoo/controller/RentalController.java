@@ -1,9 +1,13 @@
 package com.server.ShareDoo.controller;
 
+import java.util.Map;
+
 
 import com.server.ShareDoo.dto.request.RentalRequest.RentalRequestDTO;
 import com.server.ShareDoo.dto.response.RentalResponse.RentalResponseDTO;
 import com.server.ShareDoo.service.rentalService.RentalService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +18,9 @@ import vn.payos.type.WebhookData;
 import vn.payos.type.Webhook;
 import com.server.ShareDoo.entity.Rental;
 
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@SecurityRequirement(name = "api")
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/rentals")
 public class RentalController {
@@ -76,17 +83,22 @@ public class RentalController {
     }
 
     // Endpoint cho FE redirect về (nếu cần kiểm tra trạng thái qua query param)
-    @GetMapping("/payment-status")
-    public ResponseEntity<String> paymentStatus(@RequestParam("orderCode") Long orderCode, @RequestParam("status") String status) {
+    @PostMapping("/payment-status")
+    public ResponseEntity<?> paymentStatus(@RequestBody Map<String, Object> body) {
+        Long orderCode = null;
+        String status = null;
+        if (body.get("orderCode") != null) orderCode = Long.valueOf(body.get("orderCode").toString());
+        if (body.get("status") != null) status = body.get("status").toString();
         if (orderCode != null && status != null && "PAID".equalsIgnoreCase(status)) {
             Rental rental = rentalService.findByOrderCode(orderCode);
             if (rental != null) {
                 rental.setStatus("paid");
                 rentalService.save(rental);
-                return ResponseEntity.ok("Payment success and rental updated");
+                return ResponseEntity.ok(rental);
             }
+            return ResponseEntity.badRequest().body("Rental not found");
         }
-        return ResponseEntity.ok("Payment status checked");
+        return ResponseEntity.badRequest().body("Missing or invalid params");
     }
 
     // API hủy đơn hàng (cancel rental)
