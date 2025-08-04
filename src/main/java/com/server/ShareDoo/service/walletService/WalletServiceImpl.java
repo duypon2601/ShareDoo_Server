@@ -49,7 +49,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    public Wallet deposit(User user, BigDecimal amount, String description) {
+    public Wallet deposit(User user, BigDecimal amount, String description, Long orderCode) {
         Wallet wallet = getWalletByUser(user);
         if (wallet == null) wallet = createWalletForUser(user);
         wallet.setBalance(wallet.getBalance().add(amount));
@@ -61,6 +61,7 @@ public class WalletServiceImpl implements WalletService {
                 .type(TransactionType.DEPOSIT)
                 .status(TransactionStatus.SUCCESS)
                 .description(description)
+                .orderCode(orderCode)
                 .createdAt(LocalDateTime.now())
                 .build();
         walletTransactionRepository.save(transaction);
@@ -69,7 +70,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    public WalletTransaction requestWithdraw(User user, BigDecimal amount, String description) {
+    public WalletTransaction requestWithdraw(User user, BigDecimal amount, String description, Long orderCode) {
         Wallet wallet = getWalletByUser(user);
         if (wallet == null || wallet.getBalance().compareTo(amount) < 0) {
             throw new IllegalArgumentException("Số dư không đủ hoặc ví không tồn tại");
@@ -83,6 +84,7 @@ public class WalletServiceImpl implements WalletService {
                 .type(TransactionType.WITHDRAW)
                 .status(TransactionStatus.PENDING)
                 .description(description)
+                .orderCode(orderCode)
                 .createdAt(LocalDateTime.now())
                 .build();
         return walletTransactionRepository.save(transaction);

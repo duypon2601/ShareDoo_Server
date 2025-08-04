@@ -9,6 +9,7 @@ import com.server.ShareDoo.mapper.WalletMapper;
 import com.server.ShareDoo.mapper.WalletTransactionMapper;
 import com.server.ShareDoo.service.walletService.WalletService;
 import com.server.ShareDoo.repository.UserRepository;
+import com.server.ShareDoo.repository.WalletTransactionRepository;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
@@ -41,6 +42,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class WalletController {
     @Autowired
     private PayOS payOS;
+    @Autowired
+    private WalletTransactionRepository walletTransactionRepository;
     @Value("${payos.return-url}")
     private String payosReturnUrl;
     @Value("${payos.cancel-url}")
@@ -60,13 +63,14 @@ public class WalletController {
         return ResponseEntity.ok(walletMapper.toDTO(wallet));
     }
 
-    // Tạo link thanh toán PayOS cho nạp tiền vào ví
-    @PostMapping("/deposit-link")
-    public ResponseEntity<String> createDepositPaymentLink(@RequestParam BigDecimal amount, @RequestParam(required = false) String description, Principal principal) {
+
+
+    // Tạo link thanh toán PayOS dành riêng cho nạp tiền vào ví
+    @PostMapping("/deposit-link-wallet")
+    public ResponseEntity<String> createDepositWalletLink(@RequestParam BigDecimal amount, @RequestParam(required = false) String description, Principal principal) {
         Optional<User> userOpt = userRepository.findByUsername(principal.getName());
         if (userOpt.isEmpty()) return ResponseEntity.badRequest().body("User not found");
         User user = userOpt.get();
-        // Sinh orderCode riêng cho giao dịch ví
         long orderCode = System.currentTimeMillis() % 1000000 + user.getUserId();
         String desc = (description != null && description.length() > 0) ? description : ("Nạp tiền ví ShareDoo");
         if (desc.length() > 25) desc = desc.substring(0, 25);
@@ -75,16 +79,31 @@ public class WalletController {
                 .price(amount.intValue())
                 .quantity(1)
                 .build();
+        // Truyền type=wallet vào returnUrl để FE nhận diện giao dịch nạp ví
+        String returnUrlWithType = payosReturnUrl + (payosReturnUrl.contains("?") ? "&" : "?") + "type=wallet";
         PaymentData paymentData = PaymentData.builder()
                 .orderCode(orderCode)
                 .amount(amount.intValue())
                 .description(desc)
-                .returnUrl(payosReturnUrl)
+                .returnUrl(returnUrlWithType)
                 .cancelUrl(payosCancelUrl)
                 .item(item)
                 .build();
         try {
             CheckoutResponseData data = payOS.createPaymentLink(paymentData);
+            // Tạo transaction trạng thái PENDING
+            Wallet wallet = walletService.getWalletByUser(user);
+            if (wallet == null) wallet = walletService.createWalletForUser(user);
+            WalletTransaction pendingTx = WalletTransaction.builder()
+                    .wallet(wallet)
+                    .amount(amount)
+                    .type(WalletTransaction.TransactionType.DEPOSIT)
+                    .status(WalletTransaction.TransactionStatus.PENDING)
+                    .description(desc)
+                    .orderCode(orderCode)
+                    .createdAt(java.time.LocalDateTime.now())
+                    .build();
+            walletTransactionRepository.save(pendingTx);
             return ResponseEntity.ok(data.getCheckoutUrl());
         } catch (Exception e) {
             e.printStackTrace();
@@ -92,13 +111,12 @@ public class WalletController {
         }
     }
 
-
     // Yêu cầu rút tiền
     @PostMapping("/withdraw")
     public ResponseEntity<WalletTransactionDTO> requestWithdraw(@RequestParam BigDecimal amount, @RequestParam(required = false) String description, Principal principal) {
         Optional<User> userOpt = userRepository.findByUsername(principal.getName());
         if (userOpt.isEmpty()) return ResponseEntity.badRequest().build();
-        WalletTransaction transaction = walletService.requestWithdraw(userOpt.get(), amount, description);
+        WalletTransaction transaction = walletService.requestWithdraw(userOpt.get(), amount, description, null);
         return ResponseEntity.ok(walletTransactionMapper.toDTO(transaction));
     }
 
@@ -112,42 +130,46 @@ public class WalletController {
         return ResponseEntity.ok(dtos);
     }
 
-    // Nạp tiền vào ví dựa trên orderCode (dùng cho redirect sau thanh toán PayOS thành công)
-    @PostMapping("/deposit-by-ordercode")
-    public ResponseEntity<?> depositByOrderCode(@RequestBody Map<String, Object> body) {
+    // Cộng tiền vào ví cho user nhận tiền dựa trên orderCode (tương tự payment-status)
+    @PostMapping("/credit-by-ordercode")
+    public ResponseEntity<?> creditByOrderCode(@RequestBody Map<String, Object> body) {
         try {
             final Long orderCode = body.get("orderCode") != null ? Long.valueOf(body.get("orderCode").toString()) : null;
-final String status = body.get("status") != null ? body.get("status").toString() : null;
+            final String status = body.get("status") != null ? body.get("status").toString() : null;
             if (orderCode == null || status == null || !"PAID".equalsIgnoreCase(status)) {
                 return ResponseEntity.badRequest().body("Thiếu orderCode hoặc trạng thái không hợp lệ");
             }
-            // 1. Kiểm tra có phải giao dịch nạp tiền không (orderCode có thuộc về giao dịch ví không)
-            // 2. Tìm userId từ orderCode (giống logic webhook: userId = (int) (orderCode % 1000000))
-            int userId = (int) (orderCode % 1000000);
-            Optional<User> userOpt = userRepository.findById(userId);
-            if (userOpt.isEmpty()) return ResponseEntity.badRequest().body("Không tìm thấy user từ orderCode");
-            User user = userOpt.get();
-            // 3. Kiểm tra đã cộng tiền chưa (tránh cộng lặp)
-            // Có thể kiểm tra lịch sử giao dịch ví với description chứa orderCode
-            List<WalletTransaction> transactions = walletService.getWalletTransactions(user);
-            boolean alreadyDeposited = transactions.stream().anyMatch(
-                tx -> tx.getDescription() != null && tx.getDescription().contains(orderCode.toString()) && tx.getType() == WalletTransaction.TransactionType.DEPOSIT
-            );
-            if (alreadyDeposited) {
+            // Lấy userId nhận tiền từ orderCode (giả sử truyền userId nhận tiền từ FE hoặc mapping được từ orderCode)
+            // Tìm transaction PENDING theo orderCode
+            List<WalletTransaction> txList = walletTransactionRepository.findByOrderCode(orderCode);
+            WalletTransaction pendingTx = txList.stream().filter(tx -> tx.getStatus() == WalletTransaction.TransactionStatus.PENDING && tx.getType() == WalletTransaction.TransactionType.DEPOSIT).findFirst().orElse(null);
+            if (pendingTx == null) {
+                return ResponseEntity.badRequest().body("Không tìm thấy giao dịch PENDING phù hợp với orderCode");
+            }
+            Wallet wallet = pendingTx.getWallet();
+            if (wallet == null) return ResponseEntity.badRequest().body("Không tìm thấy ví để cộng tiền");
+            // Tránh cộng lặp
+            if (pendingTx.getStatus() == WalletTransaction.TransactionStatus.SUCCESS) {
                 return ResponseEntity.ok("Giao dịch đã được cộng vào ví trước đó");
             }
-            // 4. Lấy số tiền từ FE truyền lên (bắt buộc phải truyền amount)
-            final BigDecimal amount = body.get("amount") != null ? new BigDecimal(body.get("amount").toString()) : null;
-            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) return ResponseEntity.badRequest().body("Thiếu hoặc sai amount");
-            // 5. Tiến hành cộng tiền vào ví
-            String desc = "Nạp tiền qua PayOS orderCode: " + orderCode;
-            walletService.deposit(user, amount, desc);
-            return ResponseEntity.ok("Nạp tiền vào ví thành công");
+            // Lấy amount từ transaction
+            BigDecimal amount = pendingTx.getAmount();
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) return ResponseEntity.badRequest().body("Thiếu hoặc sai amount trong transaction");
+            // Cộng tiền vào ví
+            wallet.setBalance(wallet.getBalance().add(amount));
+            wallet.setUpdatedAt(java.time.LocalDateTime.now());
+            pendingTx.setStatus(WalletTransaction.TransactionStatus.SUCCESS);
+            walletTransactionRepository.save(pendingTx);
+            // Lưu lại ví
+            walletService.getWalletByUserId(wallet.getUser().getUserId()); // ensure wallet is up to date
+            return ResponseEntity.ok("Cộng tiền vào ví thành công và cập nhật trạng thái SUCCESS");
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body("Lỗi xử lý nạp tiền theo orderCode");
+            return ResponseEntity.internalServerError().body("Lỗi xử lý cộng tiền theo orderCode");
         }
     }
+
+
 }
 // Nhận webhook từ PayOS để xác nhận nạp tiền thành công
 //    @PostMapping("/payos-webhook")

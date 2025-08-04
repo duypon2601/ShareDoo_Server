@@ -10,8 +10,8 @@ public interface WalletService {
     Wallet getWalletByUser(User user);
     Wallet getWalletByUserId(Integer userId);
     Wallet createWalletForUser(User user);
-    Wallet deposit(User user, BigDecimal amount, String description);
-    WalletTransaction requestWithdraw(User user, BigDecimal amount, String description);
+    Wallet deposit(User user, BigDecimal amount, String description, Long orderCode);
+    WalletTransaction requestWithdraw(User user, BigDecimal amount, String description, Long orderCode);
     List<WalletTransaction> getWalletTransactions(User user);
     List<WalletTransaction> getWalletTransactionsByWalletId(Long walletId);
 }
