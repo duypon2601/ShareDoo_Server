@@ -36,6 +36,9 @@ public class WalletTransaction {
 
     private String description;
 
+    @Column(name = "order_code")
+    private Long orderCode;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
