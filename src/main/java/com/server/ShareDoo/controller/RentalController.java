@@ -83,6 +83,11 @@ public class RentalController {
     }
 
     // Endpoint cho FE redirect về (nếu cần kiểm tra trạng thái qua query param)
+    @Autowired
+    private com.server.ShareDoo.repository.ProductRepository productRepository;
+    @Autowired
+    private com.server.ShareDoo.service.rentalRequestService.RentalRequestService rentalRequestService;
+
     @PostMapping("/payment-status")
     public ResponseEntity<?> paymentStatus(@RequestBody Map<String, Object> body) {
         Long orderCode = null;
@@ -94,6 +99,12 @@ public class RentalController {
             if (rental != null) {
                 rental.setStatus("paid");
                 rentalService.save(rental);
+                // Lấy ownerId từ product
+                com.server.ShareDoo.entity.Product product = rental.getProduct();
+                if (product != null) {
+                    Long ownerId = product.getUserId().longValue();
+                    rentalRequestService.createRequest(rental.getId(), ownerId, "pending");
+                }
                 return ResponseEntity.ok(rental);
             }
             return ResponseEntity.badRequest().body("Rental not found");
