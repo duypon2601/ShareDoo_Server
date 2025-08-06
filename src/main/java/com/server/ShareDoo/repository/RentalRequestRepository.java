@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RentalRequestRepository extends JpaRepository<RentalRequest, Long> {
+    java.util.List<RentalRequest> findByUserId(Long userId);
 }

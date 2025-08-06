@@ -10,10 +10,10 @@ public class RentalRequestService {
     @Autowired
     private RentalRequestRepository rentalRequestRepository;
 
-    public RentalRequest createRequest(Long rentalId, Long ownerId, String status) {
+    public RentalRequest createRequest(Long rentalId, Long userId, String status) {
         RentalRequest request = new RentalRequest();
         request.setRentalId(rentalId);
-        request.setOwnerId(ownerId);
+        request.setUserId(userId);
         request.setStatus(status);
         request.setCreatedAt(java.time.LocalDateTime.now());
         return rentalRequestRepository.save(request);

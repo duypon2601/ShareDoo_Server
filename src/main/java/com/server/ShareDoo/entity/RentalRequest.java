@@ -16,12 +16,19 @@ import java.time.LocalDateTime;
 public class RentalRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     Long id;
 
+    @Column(name = "rental_id", nullable = false)
     Long rentalId;
-    Long ownerId;
+
+    @Column(name = "user_id", nullable = false)
+    Long userId;
+
+    @Column(name = "status", nullable = false, length = 32)
     String status; // pending, confirmed, cancelled, etc.
 
+    @Column(name = "created_at", nullable = false)
     @Builder.Default
     LocalDateTime createdAt = LocalDateTime.now();
 }

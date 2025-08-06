@@ -87,6 +87,8 @@ public class RentalController {
     private com.server.ShareDoo.repository.ProductRepository productRepository;
     @Autowired
     private com.server.ShareDoo.service.rentalRequestService.RentalRequestService rentalRequestService;
+    @Autowired
+    private com.server.ShareDoo.util.SecurityUtil securityUtil;
 
     @PostMapping("/payment-status")
     public ResponseEntity<?> paymentStatus(@RequestBody Map<String, Object> body) {
@@ -102,8 +104,8 @@ public class RentalController {
                 // Lấy ownerId từ product
                 com.server.ShareDoo.entity.Product product = rental.getProduct();
                 if (product != null) {
-                    Long ownerId = product.getUserId().longValue();
-                    rentalRequestService.createRequest(rental.getId(), ownerId, "pending");
+                    Long userId = product.getUserId().longValue();
+                    rentalRequestService.createRequest(rental.getId(), userId, "pending");
                 }
                 return ResponseEntity.ok(rental);
             }
@@ -142,5 +144,23 @@ public class RentalController {
         else if (orderCode != null) rental = rentalService.findByOrderCode(orderCode);
         if (rental != null) return ResponseEntity.ok(rental);
         return ResponseEntity.badRequest().body("Rental not found");
+    }
+
+    // API lấy danh sách đơn hàng cho chủ sở hữu sản phẩm
+    @GetMapping("/owner-list")
+    public ResponseEntity<?> getRentalsByOwner(@RequestParam(value = "userId", required = false) Long userId,
+                                               @RequestParam(value = "status", required = false) String status) {
+        // Nếu không truyền userId thì lấy từ SecurityUtil (user đăng nhập)
+        if (userId == null) {
+            try {
+                userId = securityUtil.getCurrentUserId();
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body("Missing or invalid userId");
+            }
+        }
+        if (status != null && !status.isEmpty()) {
+            return ResponseEntity.ok(rentalService.getRentalsByOwnerAndStatus(userId, status));
+        }
+        return ResponseEntity.ok(rentalService.getRentalsByOwner(userId));
     }
 }
