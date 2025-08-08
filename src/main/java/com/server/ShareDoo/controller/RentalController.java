@@ -6,6 +6,9 @@ import java.util.Map;
 import com.server.ShareDoo.dto.request.RentalRequest.RentalRequestDTO;
 import com.server.ShareDoo.dto.response.RentalResponse.RentalResponseDTO;
 import com.server.ShareDoo.service.rentalService.RentalService;
+import com.server.ShareDoo.service.walletService.WalletService;
+import com.server.ShareDoo.repository.UserRepository;
+import java.math.BigDecimal;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +33,12 @@ public class RentalController {
 
     @Autowired
     private PayOS payOS;
+
+    @Autowired
+    private WalletService walletService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @PostMapping
     public ResponseEntity<RentalResponseDTO> createRental(@RequestBody RentalRequestDTO rentalRequestDTO) {
@@ -112,6 +121,66 @@ public class RentalController {
             return ResponseEntity.badRequest().body("Rental not found");
         }
         return ResponseEntity.badRequest().body("Missing or invalid params");
+    }
+
+    // API: Người thuê xác nhận đã nhận hàng (packed -> received)
+    @PostMapping("/mark-received")
+    public ResponseEntity<?> markReceived(@RequestParam("orderCode") Long orderCode) {
+        Rental rental = rentalService.findByOrderCode(orderCode);
+        if (rental == null) return ResponseEntity.badRequest().body("Rental not found");
+        if (!"packed".equalsIgnoreCase(rental.getStatus())) {
+            return ResponseEntity.badRequest().body("Chỉ có thể xác nhận nhận hàng khi trạng thái là 'packed'");
+        }
+        rental.setStatus("received");
+        rentalService.save(rental);
+        return ResponseEntity.ok("Đã xác nhận nhận hàng thành công");
+    }
+
+    // API: Chủ sở hữu xác nhận đã bàn giao (received -> handover)
+    @PostMapping("/mark-handover")
+    public ResponseEntity<?> markHandover(@RequestParam("orderCode") Long orderCode) {
+        Rental rental = rentalService.findByOrderCode(orderCode);
+        if (rental == null) return ResponseEntity.badRequest().body("Rental not found");
+        if (!"received".equalsIgnoreCase(rental.getStatus())) {
+            return ResponseEntity.badRequest().body("Chỉ có thể xác nhận bàn giao khi trạng thái là 'received'");
+        }
+        rental.setStatus("handover");
+        rentalService.save(rental);
+        return ResponseEntity.ok("Đã xác nhận bàn giao thành công");
+    }
+
+    // API: Người thuê xác nhận đã trả hàng (return_wait -> returned)
+    @PostMapping("/mark-returned")
+    public ResponseEntity<?> markReturned(@RequestParam("orderCode") Long orderCode) {
+        Rental rental = rentalService.findByOrderCode(orderCode);
+        if (rental == null) return ResponseEntity.badRequest().body("Rental not found");
+        if (!"return_wait".equalsIgnoreCase(rental.getStatus())) {
+            return ResponseEntity.badRequest().body("Chỉ có thể xác nhận trả hàng khi trạng thái là 'return_wait'");
+        }
+        // 1. Chuyển trạng thái đơn hàng
+        rental.setStatus("returned");
+        rentalService.save(rental);
+        // 2. Cộng tiền cho chủ sở hữu
+        com.server.ShareDoo.entity.Product product = rental.getProduct();
+        if (product == null) return ResponseEntity.badRequest().body("Product not found");
+        Integer ownerId = product.getUserId();
+        if (ownerId == null) return ResponseEntity.badRequest().body("Product owner not found");
+        // Lấy ví chủ sở hữu và cộng tiền
+        try {
+            java.math.BigDecimal amount = java.math.BigDecimal.valueOf(rental.getTotalPrice());
+            walletService.deposit(
+                userRepository.findById(ownerId).orElseThrow(() -> new RuntimeException("Owner not found")),
+                amount,
+                "Cộng tiền cho chủ sở hữu khi trả hàng. Rental: " + rental.getId(),
+                rental.getOrderCode()
+            );
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Không thể cộng tiền cho chủ sở hữu: " + e.getMessage());
+        }
+        // 3. Đặt trạng thái sản phẩm thành AVAILABLE
+        product.setAvailabilityStatus(com.server.ShareDoo.dto.request.productRequest.ProductDTO.AvailabilityStatus.AVAILABLE);
+        productRepository.save(product);
+        return ResponseEntity.ok("Đã xác nhận trả hàng thành công, chủ sở hữu đã được cộng tiền và sản phẩm đã mở lại cho thuê.");
     }
 
     // API hủy đơn hàng (cancel rental)
