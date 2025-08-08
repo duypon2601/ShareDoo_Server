@@ -23,6 +23,15 @@ import vn.payos.type.CheckoutResponseData;
 @Service
 public class RentalService {
 
+    // Lấy tất cả đơn hàng mà sản phẩm thuộc về ownerId (userId của chủ sở hữu)
+    public List<Rental> getRentalsByOwner(Long ownerId) {
+        return rentalRepository.findByProduct_UserIdAndDeletedAtIsNull(ownerId.intValue());
+    }
+    // Lấy tất cả đơn hàng mà sản phẩm thuộc về ownerId và trạng thái
+    public List<Rental> getRentalsByOwnerAndStatus(Long ownerId, String status) {
+        return rentalRepository.findByProduct_UserIdAndStatusAndDeletedAtIsNull(ownerId.intValue(), status);
+    }
+
     @Autowired
     private RentalRepository rentalRepository;
 
