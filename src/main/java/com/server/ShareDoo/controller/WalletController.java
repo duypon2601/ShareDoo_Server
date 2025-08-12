@@ -63,6 +63,18 @@ public class WalletController {
         return ResponseEntity.ok(walletMapper.toDTO(wallet));
     }
 
+    // Tạo ví cho user hiện tại nếu chưa có
+    @PostMapping("/create")
+    public ResponseEntity<WalletDTO> createWalletForCurrentUser(Principal principal) {
+        Optional<User> userOpt = userRepository.findByUsername(principal.getName());
+        if (userOpt.isEmpty()) return ResponseEntity.badRequest().build();
+        User user = userOpt.get();
+        Wallet existing = walletService.getWalletByUser(user);
+        if (existing != null) return ResponseEntity.badRequest().body(walletMapper.toDTO(existing));
+        Wallet wallet = walletService.createWalletForUser(user);
+        return ResponseEntity.ok(walletMapper.toDTO(wallet));
+    }
+
 
 
     // Tạo link thanh toán PayOS dành riêng cho nạp tiền vào ví
