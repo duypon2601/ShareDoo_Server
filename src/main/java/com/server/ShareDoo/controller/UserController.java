@@ -22,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @Slf4j
 @CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 @RestController
@@ -32,6 +33,17 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+
+    @GetMapping("/me")
+    public ResponseEntity<RestResponse<UserDTO>> getCurrentUser() throws IdInvalidException {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserDTO user = userService.getUserByUsername(username);
+        RestResponse<UserDTO> response = new RestResponse<>();
+        response.setStatusCode(HttpStatus.OK.value());
+        response.setMessage("Current user info");
+        response.setData(user);
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping("/register")
     public ResponseEntity<RestResponse<ResCreateUserDTO>> createUser(@RequestBody CreateUserDTO createUserDTO) throws IdInvalidException {
