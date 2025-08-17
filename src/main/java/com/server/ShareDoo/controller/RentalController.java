@@ -149,7 +149,7 @@ public class RentalController {
         return ResponseEntity.ok("Đã xác nhận bàn giao thành công");
     }
 
-    // API: Người thuê xác nhận đã trả hàng (return_wait -> returned)
+    // API: Người chocho thuê xác nhận đã trả hàng (return_wait -> returned)
     @PostMapping("/mark-returned")
     public ResponseEntity<?> markReturned(@RequestParam("orderCode") Long orderCode) {
         Rental rental = rentalService.findByOrderCode(orderCode);

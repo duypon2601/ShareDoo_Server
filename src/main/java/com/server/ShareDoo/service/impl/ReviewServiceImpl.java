@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
     private final com.server.ShareDoo.repository.RentalRepository rentalRepository;
+    private final com.server.ShareDoo.repository.UserRepository userRepository;
 
     @Override
     public ReviewDTO createReview(ReviewDTO reviewDTO) {
@@ -29,6 +30,10 @@ public class ReviewServiceImpl implements ReviewService {
         );
         if (!canReview) {
             throw new RuntimeException("Bạn chỉ có thể đánh giá sau khi đã trả hàng thành công!");
+        }
+        // Kiểm tra đã review chưa
+        if (reviewRepository.findByProductIdAndReviewerId(reviewDTO.getProductId(), reviewDTO.getReviewerId()).isPresent()) {
+            throw new RuntimeException("Bạn đã đánh giá sản phẩm này!");
         }
         Review review = new Review();
         BeanUtils.copyProperties(reviewDTO, review);
@@ -53,6 +58,10 @@ public class ReviewServiceImpl implements ReviewService {
         BeanUtils.copyProperties(review, dto);
         if (review.getCreatedAt() != null) {
             dto.setCreatedAt(review.getCreatedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        }
+        if (review.getReviewerId() != null) {
+            userRepository.findById(review.getReviewerId().intValue())
+                .ifPresent(user -> dto.setReviewerName(user.getName() != null ? user.getName() : user.getUsername()));
         }
         return dto;
     }

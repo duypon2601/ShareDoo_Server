@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class RentalResponseDTO {
+    private Long orderCode;
     private Long id;
     private Long userId;
     private Long productId;
