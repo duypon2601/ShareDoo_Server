@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,10 +19,9 @@ import java.util.List;
 
 @RestController
 @SecurityRequirement(name = "api")
-@RequiredArgsConstructor
 @Slf4j
 @RequestMapping("/api/products/recommendations")
-
+@AllArgsConstructor
 public class ProductRecommendationController {
 
     private final ProductRecommendationService recommendationService;
