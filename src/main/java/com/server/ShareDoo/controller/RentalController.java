@@ -10,6 +10,7 @@ import com.server.ShareDoo.service.walletService.WalletService;
 import com.server.ShareDoo.repository.UserRepository;
 import java.math.BigDecimal;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,7 @@ import com.server.ShareDoo.entity.Rental;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/rentals")
+@AllArgsConstructor
 public class RentalController {
 
     @Autowired

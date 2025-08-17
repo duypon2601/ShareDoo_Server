@@ -21,6 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping("/api/products/recommendations")
+
 public class ProductRecommendationController {
 
     private final ProductRecommendationService recommendationService;

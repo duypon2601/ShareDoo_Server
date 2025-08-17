@@ -8,6 +8,7 @@ import com.server.ShareDoo.repository.UserRepository;
 import java.security.Principal;
 import java.util.Optional;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import java.util.List;
 @RequestMapping("/api/payment-methods")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "api")
+@AllArgsConstructor
 public class PaymentMethodController {
 
     @Autowired
