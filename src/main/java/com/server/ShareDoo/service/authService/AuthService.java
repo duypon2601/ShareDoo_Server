@@ -36,6 +36,7 @@ public class AuthService {
         resLoginDTO.setToken(token);
         resLoginDTO.setUsername(user.getUsername());
         resLoginDTO.setRole(user.getRole());
+        resLoginDTO.setImageUrl(user.getImageUrl());
         resLoginDTO.setEmail(user.getEmail());
         resLoginDTO.setName(user.getName());
         return resLoginDTO;
