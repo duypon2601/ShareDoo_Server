@@ -21,7 +21,7 @@ import vn.payos.type.WebhookData;
 import vn.payos.type.Webhook;
 import com.server.ShareDoo.entity.Rental;
 
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+
 @SecurityRequirement(name = "api")
 @RequiredArgsConstructor
 @RestController
