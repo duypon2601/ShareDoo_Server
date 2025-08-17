@@ -7,6 +7,7 @@ import com.server.ShareDoo.repository.RentalRequestRepository;
 import com.server.ShareDoo.repository.ProductRepository;
 import com.server.ShareDoo.service.rentalService.RentalService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/rental-requests")
 @RequiredArgsConstructor
+@AllArgsConstructor
 public class RentalRequestController {
     @Autowired
     private RentalRequestRepository rentalRequestRepository;

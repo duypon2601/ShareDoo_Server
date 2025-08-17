@@ -197,6 +197,18 @@ public class RentalController {
         return ResponseEntity.badRequest().body("Rental not found");
     }
 
+    // API lấy danh sách đơn hàng của user đang đăng nhập
+    @GetMapping("/my-orders")
+    public ResponseEntity<?> getMyOrders() {
+        Long userId;
+        try {
+            userId = securityUtil.getCurrentUserId();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Missing or invalid userId");
+        }
+        return ResponseEntity.ok(rentalService.getRentalListByUser(userId));
+    }
+
     // API lấy danh sách đơn thuê thực tế cho FE
     @GetMapping("/list")
     public ResponseEntity<?> getRentalList(@RequestParam(value = "userId", required = false) Long userId) {
