@@ -10,6 +10,7 @@ import com.server.ShareDoo.service.walletService.WalletService;
 import com.server.ShareDoo.repository.UserRepository;
 import java.math.BigDecimal;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +22,12 @@ import vn.payos.type.WebhookData;
 import vn.payos.type.Webhook;
 import com.server.ShareDoo.entity.Rental;
 
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+
 @SecurityRequirement(name = "api")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/rentals")
+@AllArgsConstructor
 public class RentalController {
 
     @Autowired
@@ -149,7 +151,7 @@ public class RentalController {
         return ResponseEntity.ok("Đã xác nhận bàn giao thành công");
     }
 
-    // API: Người thuê xác nhận đã trả hàng (return_wait -> returned)
+    // API: Người chocho thuê xác nhận đã trả hàng (return_wait -> returned)
     @PostMapping("/mark-returned")
     public ResponseEntity<?> markReturned(@RequestParam("orderCode") Long orderCode) {
         Rental rental = rentalService.findByOrderCode(orderCode);

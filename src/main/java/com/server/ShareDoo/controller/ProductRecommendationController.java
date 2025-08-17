@@ -15,12 +15,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+
 @RestController
 @SecurityRequirement(name = "api")
 @RequiredArgsConstructor
 @Slf4j
 @RequestMapping("/api/products/recommendations")
+
 public class ProductRecommendationController {
 
     private final ProductRecommendationService recommendationService;

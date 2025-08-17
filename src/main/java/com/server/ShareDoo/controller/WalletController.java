@@ -33,7 +33,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+
 @SecurityRequirement(name = "api")
 @Tag(name = "wallet Management", description = "Wallet management APIs")
 @RestController

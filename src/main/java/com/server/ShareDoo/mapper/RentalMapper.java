@@ -17,5 +17,6 @@ public interface RentalMapper {
 
     @Mapping(source = "user.userId", target = "userId")
     @Mapping(source = "product.productId", target = "productId")
+    @Mapping(source = "orderCode", target = "orderCode")
     RentalResponseDTO toDto(Rental entity);
 }
