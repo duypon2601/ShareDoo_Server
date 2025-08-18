@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 import vn.payos.PayOS;
@@ -65,6 +66,24 @@ public class RentalService {
         rental.setProduct(product);
         rental.setStatus("pending");
         rental.setDeletedAt(null);
+        // Tính số ngày thuê (bao gồm cả ngày bắt đầu và kết thúc)
+        long days = 0;
+        if (rentalRequestDTO.getStartDate() != null && rentalRequestDTO.getEndDate() != null) {
+            days = ChronoUnit.DAYS.between(
+                rentalRequestDTO.getStartDate().toLocalDate(),
+                rentalRequestDTO.getEndDate().toLocalDate()
+            ) + 1;
+            if (days < 1) days = 0;
+        }
+        int pricePerDay = product.getPricePerDay() != null ? product.getPricePerDay().intValue() : 0;
+        int rentalPrice = (int) (pricePerDay * days);
+        int serviceFee = Math.round(rentalPrice * 10 / 100.0f);
+        int totalAmount = rentalPrice + serviceFee;
+        // Nếu FE đã gửi totalPrice thì ưu tiên lấy nếu > 0, ngược lại dùng tính toán server
+        if (rentalRequestDTO.getTotalPrice() != null && rentalRequestDTO.getTotalPrice() > 0) {
+            totalAmount = rentalRequestDTO.getTotalPrice().intValue();
+        }
+        rental.setTotalPrice((double) totalAmount);
         // Sinh orderCode cho PayOS và lưu vào rental
         long orderCode = System.currentTimeMillis() % 1000000;
         rental.setOrderCode(orderCode);
@@ -75,7 +94,7 @@ public class RentalService {
         try {
             ItemData item = ItemData.builder()
                 .name(product.getName())
-                .price(product.getPricePerDay().intValue())
+                .price(totalAmount)
                 .quantity(1)
                 .build();
             // Tạo mô tả ngắn gọn, tối đa 25 ký tự cho PayOS
@@ -85,7 +104,7 @@ public class RentalService {
             }
             PaymentData paymentData = PaymentData.builder()
                 .orderCode(orderCode)
-                .amount(product.getPricePerDay().intValue())
+                .amount(totalAmount)
                 .description(description)
                 .returnUrl(payosReturnUrl)
                 .cancelUrl(payosCancelUrl)
